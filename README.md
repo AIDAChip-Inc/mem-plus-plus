@@ -312,6 +312,18 @@ Mem++ is evaluated on **OrgMemBench**, a benchmark for organizational memory: 44
 
 OrgMemBench is distributed separately from this repository.
 
+Question counts per category for the three benchmarks used in the paper (Table 5 of the paper):
+
+| OrgMemBench (medium) | Count | LoCoMo | Count | LongMemEval<sub>S</sub> | Count |
+|:---|:---:|:---|:---:|:---|:---:|
+| C1 Supersession | 15 | Single-hop | 841 | Knowledge update | 72 |
+| C2 Provenance | 15 | Multi-hop | 282 | Multi-session | 121 |
+| C3 Bi-temporal | 7 | Temporal | 321 | Temporal reasoning | 127 |
+| C4 Audit replay | 15 | Open domain | 96 | Single-session user | 64 |
+| C5 Justification | 15 | – | – | Single-session assistant | 56 |
+| C6 Contradiction | 6 | – | – | Single-session preference | 30 |
+| **Total** | **73** | **Total** | **1,540** | **Total** | **470** |
+
 The harness in `eval/` also runs the conversational memory benchmarks **LoCoMo**,
 **LongMemEval**, **LongBench** and **MemBench**. Benchmark data is never committed; fetch it
 first.
@@ -343,7 +355,7 @@ paper's results are summarized in the next section.
 
 # Results
 
-All numbers in this section are **as reported in the paper** ([`paper/mempp_iclr2027_submission.pdf`](paper/mempp_iclr2027_submission.pdf), Tables 1 to 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+All numbers in this section are **as reported in the paper** ([`paper/mempp_iclr2027_submission.pdf`](paper/mempp_iclr2027_submission.pdf), Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
 
 ### OrgMemBench
 
@@ -461,7 +473,24 @@ Ablation with `claude-sonnet-4-6` as the answerer and the same `gpt-4o-mini` jud
 | w/ fact index | 55.2 (−1.7) | 83.1 (−2.6) | – |
 | Mem<sup>g</sup>++ | 55.3 (−1.7) | 84.8 (−0.9) | 86.0 (−2.0) |
 
-The full paper also reports the category distribution of each benchmark and the effect of the number of retrieved rows *k* on OrgMemBench (Appendix, Tables 5 and 7, Figure 4).
+### Retrieval depth *k* on OrgMemBench
+
+<p align="center">
+  <img src="docs/figures/topk_sensitivity.png" width="100%" alt="OrgMemBench score of Mem++ against the number of retrieved rows k, for gpt-4o-mini and gpt-4.1-mini answerers, with Full Context as a dashed baseline">
+</p>
+
+OrgMemBench score of Mem++ as the number of retrieved rows *k* varies. The dashed line is Full Context, and the annotated point is *k* = 50, the setting used in the main experiments. Retrieved tokens are summed over all questions and counted before the 40,000-character cut.
+
+| *k* | gpt-4o-mini | gpt-4.1-mini | Retrieved tokens |
+|:---:|:---:|:---:|:---:|
+| 5 | 36.57 | 43.99 | 0.20M |
+| 10 | 45.10 | 50.56 | 0.41M |
+| 15 | 47.16 | 54.44 | 0.61M |
+| 30 | 45.94 | 56.49 | 1.22M |
+| 50 | 44.23 | 57.00 | 2.01M |
+| 70 | 48.67 | 56.70 | 2.77M |
+| 100 | 44.89 | 56.54 | 3.63M |
+| Full Context | 16.85 | 21.52 | 18.68M |
 
 # Project structure
 
