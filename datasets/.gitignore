@@ -1,0 +1,20 @@
+# Downloaded benchmark data is NEVER committed — it is fetched locally by
+# fetch.py and shared with the student out-of-band. Ignore the data dirs but
+# keep the fetch script + this file + the README.
+locomo/
+longmemeval/
+longbench/
+membench/
+
+# Anything else a fetch drops here (HF cache fragments, tmp)
+*.json
+*.jsonl
+*.parquet
+*.arrow
+*.zip
+*.tar.gz
+
+# ...but keep the tracked tooling explicitly
+!.gitignore
+!README.md
+!fetch.py

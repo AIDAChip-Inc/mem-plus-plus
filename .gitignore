@@ -1,0 +1,18 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+# Project-local, Docker-free Postgres cluster (created by run_demo.sh) — never commit.
+.pgdata/
+.pgsock/
+
+# Evaluation outputs. This repository ships code only, never run results.
+runs/
+results/
+*_results.json
+*.results.json
+*.sqlite3
+.DS_Store

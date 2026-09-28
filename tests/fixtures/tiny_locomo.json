@@ -1,0 +1,39 @@
+[
+  {
+    "conversation": {
+      "session_1_date_time": "1:30 pm on 15 May, 2023",
+      "session_1": [
+        {"dia_id": "D1:1", "speaker": "Alice", "text": "I finally booked my trip to Kyoto for the cherry blossom season."},
+        {"dia_id": "D1:2", "speaker": "Bob", "text": "That sounds wonderful, I have always wanted to visit Japan in spring."},
+        {"dia_id": "D1:3", "speaker": "Alice", "text": "My flight leaves on the third of April and I will stay for ten days."}
+      ],
+      "session_2_date_time": "9:00 am on 20 May, 2023",
+      "session_2": [
+        {"dia_id": "D2:1", "speaker": "Alice", "text": "I adopted a rescue dog named Biscuit from the shelter yesterday."},
+        {"dia_id": "D2:2", "speaker": "Bob", "text": "Congratulations on the new puppy, what breed is Biscuit?"},
+        {"dia_id": "D2:3", "speaker": "Alice", "text": "Biscuit is a beagle mix and is about two years old."}
+      ]
+    },
+    "qa": [
+      {"question": "Which city is Alice planning to travel to for cherry blossom season?", "answer": "Kyoto", "category": 4, "evidence": ["D1:1"]},
+      {"question": "What is the name of the rescue dog Alice adopted?", "answer": "Biscuit", "category": 4, "evidence": ["D2:1"]},
+      {"question": "What breed is Biscuit?", "answer": "beagle mix", "category": 4, "evidence": ["D2:3"]},
+      {"question": "How many days will Alice stay on her trip?", "answer": "ten days", "category": 2, "evidence": ["D1:3"]},
+      {"question": "What is the color of Alice's spaceship?", "answer": "This question is not answerable from the conversation.", "category": 5, "adversarial_answer": "There is no spaceship mentioned.", "evidence": []}
+    ]
+  },
+  {
+    "conversation": {
+      "session_1_date_time": "2:15 pm on 3 June, 2023",
+      "session_1": [
+        {"dia_id": "D1:1", "speaker": "Carol", "text": "We migrated the payments service to the new vendor contract last quarter."},
+        {"dia_id": "D1:2", "speaker": "Dan", "text": "Did the migration reduce the transaction fees as we hoped?"},
+        {"dia_id": "D1:3", "speaker": "Carol", "text": "Yes, the fees dropped from three percent to one point eight percent."}
+      ]
+    },
+    "qa": [
+      {"question": "What did the payments service migrate to last quarter?", "answer": "the new vendor contract", "category": 4, "evidence": ["D1:1"]},
+      {"question": "What did the transaction fees drop to after migration?", "answer": "one point eight percent", "category": 4, "evidence": ["D1:3"]}
+    ]
+  }
+]

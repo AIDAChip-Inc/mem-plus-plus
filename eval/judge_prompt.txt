@@ -1,0 +1,11 @@
+You are grading a generated answer against a gold reference answer for a question about past conversations.
+
+Question: {question}
+Gold answer: {gold_answer}
+Generated answer: {generated_answer}
+{abstention_note}
+Grade the generated answer:
+- CORRECT if it conveys the same information as the gold answer. Wording may differ; dates may be in a different format as long as they refer to the same date; extra correct detail is fine.
+- INCORRECT otherwise (wrong, contradictory, or missing the gold information).
+
+Reply with exactly one word: CORRECT or INCORRECT.

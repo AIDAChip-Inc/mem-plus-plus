@@ -1,0 +1,23 @@
+# Local Postgres 16 + pgvector for the memory-research engine.
+# Plain local DSN only — the production Railway/remote/1Password/self-heal
+# connection machinery is deliberately stripped (this is a research replica).
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: memory
+      POSTGRES_PASSWORD: memory
+      POSTGRES_DB: memory_research
+    ports:
+      # Host 5433 -> container 5432, so a local production Postgres on 5432 is untouched.
+      - "5433:5432"
+    volumes:
+      - memory_research_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memory -d memory_research"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  memory_research_pgdata:
