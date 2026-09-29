@@ -541,5 +541,4 @@ If you use Mem++ or OrgMemBench, please cite:
 
 # License
 
-This repository is private and has not yet been released under an open-source license. All
-rights reserved.
+Apache 2.0 — see the [LICENSE](LICENSE) file for details.
