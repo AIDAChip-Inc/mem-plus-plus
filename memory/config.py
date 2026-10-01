@@ -6,8 +6,7 @@ replaced by the constants below (user decision: Flagsmith stubbed to constants
 here). **Only the flag SOURCE changes** (Flagsmith registry -> config constant) —
 the store/extraction logic stays byte-faithful.
 
-The flag defaults MATCH PRODUCTION (verified against
-``aidachip-mvp/src/backend/app/flags/registry.py`` lines 231-239): every flag is
+The flag defaults match the production flag registry: every flag is
 env-overridable so a study can flip it (e.g. turn atomic-fact granularity on)
 without editing code — set the same-named env var to 1/true/on or 0/false/off.
 

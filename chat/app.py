@@ -10,7 +10,11 @@ Run:  uv run python -m chat.app         (or the one-command ``run_demo.sh``)
 from __future__ import annotations
 
 import html
+import ipaddress
 import os
+import re
+import sys
+import tempfile
 from pathlib import Path
 
 import gradio as gr
@@ -30,6 +34,53 @@ _BACKEND = EngineBackend()
 DEFAULT_MODEL = "haiku"
 
 
+_ENV_KEY_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+# Conservative token whitelist: no whitespace, control chars, quotes, `$`, backticks,
+# `;`, `#`, `=` or other shell/dotenv metacharacters. No provider prefix required so
+# dummy/test keys keep working.
+_API_KEY_RE = re.compile(r"[A-Za-z0-9._-]{1,512}")
+_API_KEY_VAR = "ANTHROPIC_API_KEY"
+
+
+def validate_api_key(value: str) -> str:
+    """Return ``value`` unchanged if it is a safe key token, else raise ValueError.
+    Must run before ANY file write or ``os.environ`` assignment. The message never
+    contains the value."""
+    if not isinstance(value, str) or not _API_KEY_RE.fullmatch(value):
+        raise ValueError(
+            "Invalid API key: only letters, digits, '.', '_' and '-' are allowed "
+            "(max 512 chars; no spaces, quotes, newlines or shell characters)."
+        )
+    return value
+
+
+def parse_dotenv(text: str) -> dict[str, str]:
+    """Non-executing ``.env`` parser (no shell, no eval, no expansion).
+
+    Supports ``KEY=value``, ``export KEY=value``, matched ``"..."`` / ``'...'``
+    values (taken literally, no escapes or ``$`` expansion), blank lines, ``#``
+    comments, and trailing `` # comment`` on unquoted values. Invalid lines are
+    skipped. Later duplicates win. Keep in sync with ``load_env_file`` in run_demo.sh."""
+    out: dict[str, str] = {}
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export ") or line.startswith("export\t"):
+            line = line[6:].lstrip()
+        key, sep, val = line.partition("=")
+        key = key.strip()
+        if not sep or not _ENV_KEY_RE.fullmatch(key):
+            continue
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1]
+        else:
+            val = re.split(r"\s#", val, maxsplit=1)[0].rstrip()
+        out[key] = val
+    return out
+
+
 def _load_dotenv() -> None:
     """Populate os.environ from memory-research/.env (stdlib only), without
     overriding anything already set. Lets ``python -m chat.app`` work standalone,
@@ -37,44 +88,70 @@ def _load_dotenv() -> None:
     env = _ENV_PATH
     if not env.exists():
         return
-    for line in env.read_text(encoding="utf-8").splitlines():
-        s = line.strip()
-        if not s or s.startswith("#") or "=" not in s:
-            continue
-        key, val = s.split("=", 1)
-        key = key.strip()
-        val = val.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+    for key, val in parse_dotenv(env.read_text(encoding="utf-8")).items():
+        if key not in os.environ:
             os.environ[key] = val
 
 
 def persist_api_key(value: str, *, env_path: Path | None = None) -> bool:
     """Write ``ANTHROPIC_API_KEY=<value>`` into ``.env``, creating or updating
     that single line and preserving every other line. Returns True when a key was
-    saved, False for an empty value. The key is NEVER logged or echoed; the file
-    is written 0600 (owner-only) since it holds a secret, and ``.env`` is
-    gitignored so it is never committed. ``env_path`` resolves at call time so the
+    saved, False for an empty value. Raises ValueError (before touching the file)
+    if the key fails ``validate_api_key``. The key is NEVER logged or echoed. The
+    file is replaced atomically (temp file in the same dir + ``os.replace``) with
+    0600 perms, so a secret is never briefly world-readable; OS/permission errors
+    propagate. ``.env`` is gitignored. ``env_path`` resolves at call time so the
     live ``_ENV_PATH`` (patchable in tests) is honoured."""
     env_path = env_path or _ENV_PATH
-    value = (value or "").strip()
-    if not value:
+    if not (value or "").strip():
         return False
+    value = validate_api_key(value)
     lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
-    new_line = f"ANTHROPIC_API_KEY={value}"
+    new_line = f"{_API_KEY_VAR}={value}"
+    out: list[str] = []
     replaced = False
-    for i, line in enumerate(lines):
-        if line.strip().split("=", 1)[0].strip() == "ANTHROPIC_API_KEY":
-            lines[i] = new_line
-            replaced = True
-            break
+    for line in lines:
+        head = line.strip().removeprefix("export ").split("=", 1)[0].strip()
+        if head == _API_KEY_VAR:
+            if not replaced:  # keep the first slot, drop later duplicates
+                out.append(new_line)
+                replaced = True
+            continue
+        out.append(line)
     if not replaced:
-        lines.append(new_line)
-    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        out.append(new_line)
+    fd, tmp = tempfile.mkstemp(dir=env_path.parent, prefix=f".{env_path.name}.", suffix=".tmp")
     try:
-        env_path.chmod(0o600)  # secret file — restrict to owner
-    except OSError:
-        pass  # best-effort on platforms without POSIX perms
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            os.fchmod(fh.fileno(), 0o600)
+            fh.write("\n".join(out) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, env_path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except FileNotFoundError:
+            pass
+        raise
     return True
+
+
+def require_loopback(host: str) -> str:
+    """Return ``host`` if it is a loopback address/name, else raise ValueError.
+    This demo has no authentication, so it must only listen locally."""
+    h = (host or "").strip().strip("[]")
+    if h.lower() == "localhost":
+        return host
+    try:
+        if ipaddress.ip_address(h).is_loopback:
+            return host
+    except ValueError:
+        pass
+    raise ValueError(
+        f"Refusing to bind Gradio to non-loopback host {host!r}: this local-only demo has "
+        "no authentication. Use 127.0.0.1, ::1 or localhost (see SECURITY.md)."
+    )
 
 
 # ── debug-panel rendering (the "show the recall" surface) ──────────────────────
@@ -177,7 +254,11 @@ def on_submit(user_msg: str, history: list[dict], persona: str, k: float,
     if not user_msg:
         return history, "", render_debug(None)
     if (api_key or "").strip():
-        os.environ["ANTHROPIC_API_KEY"] = api_key.strip()
+        try:
+            validate_api_key(api_key)
+        except ValueError as exc:  # reject before any env assignment; keep the typed message
+            return history, user_msg, render_debug(None, error=str(exc))
+        os.environ[_API_KEY_VAR] = api_key
     history = list(history or [])
     try:
         # ``model`` (haiku/sonnet/opus) drives BOTH the reply and the POST-hook store.
@@ -199,11 +280,18 @@ def on_submit(user_msg: str, history: list[dict], persona: str, k: float,
 def on_save_key(api_key: str) -> str:
     """Persist the entered key to .env (and use it now). Confirmation only — the
     key material is never echoed back."""
-    key = (api_key or "").strip()
-    if not key:
+    key = api_key or ""
+    if not key.strip():
         return "Enter a key first, then press Save."
-    os.environ["ANTHROPIC_API_KEY"] = key
-    persist_api_key(key)
+    try:
+        validate_api_key(key)
+    except ValueError as exc:  # never assign env or write the file for an invalid key
+        return f"✗ {exc}"
+    try:
+        persist_api_key(key)
+    except OSError as exc:
+        return f"✗ Could not save to `{_ENV_PATH.name}` ({type(exc).__name__}); key not saved."
+    os.environ[_API_KEY_VAR] = key
     return f"✓ Saved to `{_ENV_PATH.name}` (owner-only, gitignored) — future launches auto-load it."
 
 
@@ -311,9 +399,14 @@ def build_demo() -> gr.Blocks:
 def main() -> None:
     _load_dotenv()
     name = os.environ.get("GRADIO_SERVER_NAME", "127.0.0.1")
+    try:
+        require_loopback(name)
+    except ValueError as exc:
+        sys.exit(f"error: {exc}")
     port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
     print(f"\n  memory-research chat demo → http://{name}:{port}\n")
-    build_demo().launch(server_name=name, server_port=port, show_api=False)
+    # share=False explicit: GRADIO_SHARE=1 would otherwise open a public tunnel.
+    build_demo().launch(server_name=name, server_port=port, show_api=False, share=False)
 
 
 if __name__ == "__main__":

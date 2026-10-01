@@ -10,7 +10,8 @@ services:
       POSTGRES_DB: memory_research
     ports:
       # Host 5433 -> container 5432, so a local production Postgres on 5432 is untouched.
-      - "5433:5432"
+      # Bound to loopback ONLY: the DB uses a fixed demo password (memory/memory).
+      - "127.0.0.1:5433:5432"
     volumes:
       - memory_research_pgdata:/var/lib/postgresql/data
     healthcheck:

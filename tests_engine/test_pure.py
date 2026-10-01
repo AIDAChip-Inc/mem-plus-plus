@@ -141,16 +141,16 @@ def test_build_payload_prefix_and_blank():
 
 # ── scope derivation (contract) ────────────────────────────────────────────────
 def test_contributor_slug_normalizes(monkeypatch):
-    monkeypatch.setenv("MEMORY_USER", "Abdu Mohamed")
-    assert _contributor_slug() == "abdu-mohamed"
+    monkeypatch.setenv("MEMORY_USER", "Alice Example")
+    assert _contributor_slug() == "alice-example"
 
 
 def test_scope_is_deterministic_and_uses_memory_user(monkeypatch):
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     uid, pid, cid, slug = _scope()
     uid2, pid2, cid2, slug2 = _scope()
     assert (uid, pid, cid, slug) == (uid2, pid2, cid2, slug2)
-    assert slug == "abdu"
+    assert slug == "alice"
     # project_id/customer_id are fixed per the namespace, independent of the user.
     monkeypatch.setenv("MEMORY_USER", "someone-else")
     _, pid3, cid3, _ = _scope()
