@@ -58,7 +58,7 @@ class _FakeEmbedder:
 def sqlite_api(monkeypatch):
     """Bind ``memory.db`` to a fresh in-memory SQLite so the public API (write +
     browse) runs end-to-end on the DEGRADED path (no embedding, LIKE lexical)."""
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     engine = create_engine("sqlite://", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, expire_on_commit=True, future=True)
@@ -108,7 +108,7 @@ def test_tags_any_match_and_normalized(sqlite_api):
 def test_authorship_split_out_of_tags(sqlite_api):
     _seed(sqlite_api)
     row = next(r for r in browse_memories(persona="awsi") if "pgvector" in r["tags"])
-    assert row["by"] == "abdu"  # by:<slug> separated into `by`
+    assert row["by"] == "alice"  # by:<slug> separated into `by`
     assert all(not t.startswith("by:") for t in row["tags"])  # not leaked into tags
 
 
@@ -130,15 +130,15 @@ def test_min_hit_count(sqlite_api):
 def test_scope_own_team_all(sqlite_api, monkeypatch):
     """own/team is the USER axis: seed a SECOND human (different MEMORY_USER, same
     namespace-fixed project) so ``team`` is non-empty."""
-    _seed(sqlite_api)  # authored by MEMORY_USER=abdu
+    _seed(sqlite_api)  # authored by MEMORY_USER=alice
     monkeypatch.setenv("MEMORY_USER", "teammate")
     recall.store_facts_verbatim("qiyas", [("Teammate ran the benchmark", ["bench"], None)])
-    monkeypatch.setenv("MEMORY_USER", "abdu")  # browse AS abdu
+    monkeypatch.setenv("MEMORY_USER", "alice")  # browse AS alice
 
     own = browse_memories(scope="own")
     team = browse_memories(scope="team")
     all_ = browse_memories(scope="all")
-    assert {r["agent_type"] for r in own} == {"awsi", "dina"}  # abdu's personas
+    assert {r["agent_type"] for r in own} == {"awsi", "dina"}  # alice's personas
     assert all(r["scope"] == "own" for r in own)
     assert {r["summary"] for r in team} == {"Teammate ran the benchmark"}
     assert all(r["scope"] == "team" for r in team)
@@ -250,7 +250,7 @@ def test_semantic_degrades_to_lexical_on_sqlite(sqlite_api):
 def test_semantic_ranks_by_cosine_and_stays_read_only(db_session, monkeypatch):
     """Real Postgres + pgvector. Skips without a DB; FAILS if the vector leg is
     silently absent when Postgres is up."""
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     fake = _FakeEmbedder()
     # Store writes embeddings via memory.store; browse embeds the query via
     # memory.browse — patch BOTH to the same fake so the vectors share one space.
@@ -293,7 +293,7 @@ def test_get_memory_returns_full_cell(sqlite_api):
     assert cell["content"] == "Adopt pgvector for semantic recall"
     assert cell["agent_type"] == "awsi"
     assert cell["scope"] == "own"
-    assert cell["by"] == "abdu"
+    assert cell["by"] == "alice"
     assert "pgvector" in cell["tags"]
     assert all(not t.startswith("by:") for t in cell["tags"])  # authorship split out
     assert cell["is_active"] is True
@@ -355,7 +355,7 @@ def test_get_memory_is_read_only(sqlite_api):
 def test_get_memory_reports_embedding_presence_on_postgres(db_session, monkeypatch):
     """Skips without a DB; on real Postgres asserts the vector/tsv PRESENCE flags and
     the 384-d dim — without ever dumping the raw floats — and stays read-only."""
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     fake = _FakeEmbedder()
     monkeypatch.setattr("memory.store.get_embedding_service", lambda _p: fake)
     recall.store_facts_verbatim(

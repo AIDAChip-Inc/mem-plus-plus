@@ -87,12 +87,12 @@ def test_run_browse_blank_fields_become_none_or_defaults():
 def test_render_table_columns_and_escaping():
     rows = [{
         "content": "PLL <script> filter", "agent_type": "awsi", "scope": "own",
-        "tags": ["pll", "phase-noise"], "by": "abdu",
+        "tags": ["pll", "phase-noise"], "by": "alice",
         "occurred_at": "2026-07-20T00:00:00+00:00", "hit_count": 3,
     }]
     out = render_memory_table(rows, offset=0)
     assert "&lt;script&gt;" in out and "<script>" not in out  # escaped, not injected
-    assert "awsi" in out and "abdu" in out and "2026-07-20" in out  # persona/by/event
+    assert "awsi" in out and "alice" in out and "2026-07-20" in out  # persona/by/event
     assert "pll" in out and "phase-noise" in out                    # tag chips
     assert ">3<" in out                                             # hit_count cell
 
@@ -108,7 +108,7 @@ def _full_cell_row() -> dict:
         "id": "11111111-2222-3333-4444-555555555555",
         "summary": "sched fact", "content": "the scheduler runs nightly",
         "context_summary": "sched fact ctx", "agent_summary": "team-facing sched fact",
-        "tags": ["sched"], "by": "abdu",
+        "tags": ["sched"], "by": "alice",
         "user_id": "aaaaaaaa-0000-0000-0000-000000000000", "agent_type": "awsi",
         "project_id": "bbbbbbbb-0000-0000-0000-000000000000",
         "customer_id": "cccccccc-0000-0000-0000-000000000000",
@@ -379,7 +379,7 @@ def test_on_merge_default_one_click(sqlite_api):
 def sqlite_api(monkeypatch):
     """Bind memory.db to a fresh in-memory SQLite so the real write + browse run
     end-to-end on the DEGRADED path (no embeddings, LIKE lexical)."""
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     engine = create_engine("sqlite://", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, expire_on_commit=True, future=True)

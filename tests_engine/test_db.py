@@ -104,7 +104,7 @@ def test_occurred_before_after_filter(db_session):
 
 # ── recall.py public API ───────────────────────────────────────────────────────
 def test_store_facts_verbatim_then_recall_facts(db_session, monkeypatch):
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     res = recall.store_facts_verbatim(
         "awsi",
         [
@@ -116,13 +116,13 @@ def test_store_facts_verbatim_then_recall_facts(db_session, monkeypatch):
     rows = recall.recall_facts("awsi", "RRF weights", k=10)
     assert any("RRF weights" in r["summary"] for r in rows)
     top = next(r for r in rows if "RRF weights" in r["summary"])
-    assert top["by"] == "abdu"  # authorship tag surfaced
+    assert top["by"] == "alice"  # authorship tag surfaced
     assert top["occurred_at"] == "2026-07-23"
     assert isinstance(top["hit_count"], int)
 
 
 def test_store_facts_verbatim_dedups_exact_summary(db_session, monkeypatch):
-    monkeypatch.setenv("MEMORY_USER", "abdu")
+    monkeypatch.setenv("MEMORY_USER", "alice")
     recall.store_facts_verbatim("burhan", [("a unique dedup fact", [], None)])
     again = recall.store_facts_verbatim("burhan", [("a unique dedup fact", [], None)])
     assert again["written"] == 0  # exact-summary dedup in-scope

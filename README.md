@@ -1,4 +1,6 @@
-<h1 align="center">Mem++</h1>
+<h1 align="center">
+  <img src="docs/brand/mem-plus-plus-header.svg" width="100%" alt="Mem++ — AIDAChip Organization Memory">
+</h1>
 
 <p align="center">
   <b>Non-Destructive Memory for Long-Term Organizational LLM Agents</b>
@@ -20,6 +22,8 @@
   <a href="#results">Results</a>
   ·
   <a href="#citation">Citation</a>
+  ·
+  <a href="SECURITY.md">Security</a>
 </p>
 
 <p align="center">
@@ -134,8 +138,8 @@ The boxes in the figure follow one convention:
 Both paths use [`uv`](https://docs.astral.sh/uv/) and Python 3.13 or newer. No GPU is needed.
 
 ```bash
-git clone https://github.com/yehiahmad/mempp.git
-cd mempp
+git clone https://github.com/AIDAChip-Inc/mem-plus-plus.git
+cd mem-plus-plus
 uv sync --extra llm --extra openai
 ```
 

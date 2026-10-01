@@ -81,6 +81,49 @@ fi
 PORT="${GRADIO_SERVER_PORT:-7860}"
 HOSTNAME_="${GRADIO_SERVER_NAME:-127.0.0.1}"
 
+# Local-only demo, no auth: refuse non-loopback binds (chat.app enforces this too).
+case "$HOSTNAME_" in
+  localhost|127.0.0.1|::1|\[::1\]) ;;
+  *)
+    echo "✗ refusing GRADIO_SERVER_NAME='$HOSTNAME_': this demo is local-only (no auth)." >&2
+    echo "  Use 127.0.0.1 / localhost / ::1. See SECURITY.md." >&2
+    exit 1 ;;
+esac
+
+# >>> load_env_file (extracted verbatim by the regression tests)
+# Safe, NON-executing .env loader (never `source`/eval). Accepts KEY=value,
+# `export KEY=value`, matched "..." / '...' values (literal: no escapes, no $ or
+# backtick expansion), full-line and trailing ` #` comments. Invalid lines are
+# skipped with a warning. Like the previous `set -a; . ./.env`, file values are
+# assigned over already-exported vars; MEMORY_DATABASE_URL is still overridden
+# by the computed socket DSN in step 5.
+load_env_file() {
+  local file="$1" line key val
+  local re='^([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=(.*)$'
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    case "$line" in ''|'#'*) continue ;; esac
+    case "$line" in export[[:space:]]*) line="${line#export}"; line="${line#"${line%%[![:space:]]*}"}" ;; esac
+    if ! [[ "$line" =~ $re ]]; then
+      echo "! $file: skipping unparseable line" >&2
+      continue
+    fi
+    key="${BASH_REMATCH[1]}"
+    val="${BASH_REMATCH[2]}"
+    val="${val#"${val%%[![:space:]]*}"}"
+    val="${val%"${val##*[![:space:]]}"}"
+    if [ "${#val}" -ge 2 ] && { [[ "$val" == \"*\" ]] || [[ "$val" == \'*\' ]]; }; then
+      val="${val:1:${#val}-2}"
+    else
+      val="${val%%[[:space:]]#*}"
+      val="${val%"${val##*[![:space:]]}"}"
+    fi
+    export "$key=$val"
+  done < "$file"
+}
+# <<< load_env_file
+
 # 1. Config — seed .env from the template on first run, then load it. NOTE: the
 #    project-local socket DSN is computed and exported below (step 5), overriding
 #    any MEMORY_DATABASE_URL in .env, so the local cluster is authoritative.
@@ -88,7 +131,7 @@ if [ ! -f .env ]; then
   cp .env.example .env
   echo "→ created .env from .env.example"
 fi
-set -a; . ./.env; set +a
+load_env_file ./.env
 
 # 2. Prerequisites.
 if [ -z "$PGBIN" ] || [ ! -x "$PGBIN/initdb" ]; then
