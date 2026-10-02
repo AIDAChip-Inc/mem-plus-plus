@@ -1,6 +1,6 @@
 # Security and deployment notes
 
-Mem++ is a **local research/demo tool**. It has no authentication, no tenant
+Mem++ is a **local research/demo tool**. It has optional single-owner UI authentication, no tenant
 isolation, and no hardening for shared or internet-facing use. Nothing here is a
 production security assurance.
 
@@ -15,7 +15,17 @@ production security assurance.
 - `docker-compose.yml` publishes Postgres as `127.0.0.1:5433`. It uses a fixed demo
   credential (`memory`/`memory`); do not expose it or reuse that password.
 - Do not put the UI behind a reverse proxy or port-forward to make it reachable by
-  others. If you need that, add real authentication first; that is out of scope here.
+  others. The optional UI login alone does not make remote deployment supported.
+
+## Optional UI authentication
+
+- Set `MEMORY_UI_AUTH_ENABLED=1` with `MEMORY_UI_USERNAME` and
+  `MEMORY_UI_PASSWORD` to enable Gradio session authentication for the demo.
+- Missing or blank credentials and invalid enable flags fail startup. Secrets
+  are never included in configuration errors. Use a unique, long password.
+- All authenticated access uses the same process and memory scope; this is not
+  tenant isolation or role-based authorization. Restart to change credentials.
+- Loopback-only binding and disabled public sharing still apply.
 
 ## Secrets and `.env`
 
