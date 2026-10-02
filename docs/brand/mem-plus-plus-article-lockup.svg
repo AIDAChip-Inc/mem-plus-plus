@@ -14,7 +14,7 @@
     <path d="M247 246V314M213 280H281M354 246V314M320 280H388" stroke="#DE0A03" stroke-width="22"/>
   </g></g>
 <text x="184" y="112" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="91" font-weight="700">Mem</text>
-<text x="394" y="112" fill="#e11308" font-family="Arial, Helvetica, sans-serif" font-size="91" font-weight="700">++</text>
+<text x="368" y="112" fill="#e11308" font-family="Arial, Helvetica, sans-serif" font-size="91" font-weight="700">++</text>
 <path d="M662 36V145" stroke="#31545c" stroke-width="2"/>
 <text x="700" y="84" fill="#b1d0d5" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="700">AIDAChip</text>
 <text x="700" y="129" fill="#b1d0d5" font-family="Arial, Helvetica, sans-serif" font-size="35">Organizational Memory</text>
