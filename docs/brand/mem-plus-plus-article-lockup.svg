@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="180" viewBox="0 0 1200 180" role="img">
+<title>Mem++ — AIDAChip Organizational Memory</title>
+<rect width="1200" height="180" rx="24" fill="#0b1b20" stroke="#31545c" stroke-width="2"/>
+<g transform="translate(18 12) scale(0.26)"><g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Open, asymmetric lobes retain an unmistakable brain silhouette. -->
+    <path d="M439 436C477 428 501 401 500 365C529 341 535 300 515 270C522 234 505 202 476 187C473 150 443 123 407 122C384 91 344 81 310 96C279 74 237 79 214 106C176 101 144 120 132 151C97 157 74 186 77 220C49 247 50 287 73 311C68 349 96 380 132 383C151 411 185 423 216 412C244 437 277 442 307 429C329 425 348 431 360 451L383 490C391 504 413 503 420 488L439 436Z" stroke="#DE0A03" stroke-width="17"/>
+    <!-- Continuous traces and terminal nodes reference stored connections. -->
+    <path d="M214 106C210 132 225 150 249 155M132 151C144 174 168 182 190 169M77 220C101 218 122 232 128 255M73 311C97 299 113 306 127 322M132 383C132 358 150 345 171 345M216 412C205 396 207 384 215 375M307 429C288 413 283 392 290 374M439 436C414 431 398 411 399 389M500 365C476 371 454 357 446 337M515 270C488 272 468 257 465 235M407 122C408 149 391 170 367 172" stroke="#DE0A03" stroke-width="12"/>
+    <path d="M169 227H215L244 197H293V157M156 287H187M202 330L234 362H253M334 191H366L400 223H425M353 365H387L417 335M311 338V377M447 290H411" stroke="#16889A" stroke-width="12"/>
+    <g fill="#16889A">
+      <circle cx="169" cy="227" r="10"/><circle cx="293" cy="157" r="10"/><circle cx="156" cy="287" r="10"/><circle cx="202" cy="330" r="10"/><circle cx="253" cy="362" r="10"/><circle cx="334" cy="191" r="10"/><circle cx="425" cy="223" r="10"/><circle cx="353" cy="365" r="10"/><circle cx="417" cy="335" r="10"/><circle cx="311" cy="377" r="10"/><circle cx="447" cy="290" r="10"/>
+    </g>
+    <!-- Rounded geometric plus pair: the memorable focal mark. -->
+    <path d="M247 246V314M213 280H281M354 246V314M320 280H388" stroke="#DE0A03" stroke-width="22"/>
+  </g></g>
+<text x="184" y="112" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="91" font-weight="700">Mem</text>
+<text x="426" y="112" fill="#e11308" font-family="Arial, Helvetica, sans-serif" font-size="91" font-weight="700">++</text>
+<path d="M662 36V145" stroke="#31545c" stroke-width="2"/>
+<text x="700" y="84" fill="#b1d0d5" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="700">AIDAChip</text>
+<text x="700" y="129" fill="#b1d0d5" font-family="Arial, Helvetica, sans-serif" font-size="35">Organizational Memory</text>
+</svg>
