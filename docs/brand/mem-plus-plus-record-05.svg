@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 285" role="img" aria-label="MAR 05 JOINT DECISION: Architecture + PD + Verification says Freeze the NoC Monday, pending MCMM sign-off.">
+<rect width="800" height="285" rx="20" fill="#17151a"/>
+<rect x="1" y="1" width="798" height="283" rx="19" fill="none" stroke="#e11308" stroke-width="2"/>
+<rect x="28" y="33" width="7" height="219" rx="3" fill="#e11308"/>
+<text x="62" y="63" fill="#ff5548" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" text-anchor="start">MAR 05</text>
+<text x="748" y="63" fill="#ff5548" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" text-anchor="end">JOINT DECISION</text>
+<text x="62" y="122" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Architecture + PD + Verification</text>
+<text x="62" y="159" fill="#9dbbc1" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="500" text-anchor="start">Joint review minutes</text>
+<text x="62" y="218" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="500" text-anchor="start">“Freeze the NoC Monday,</text>
+<text x="62" y="258" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="500" text-anchor="start">pending MCMM sign-off.”</text>
+</svg>

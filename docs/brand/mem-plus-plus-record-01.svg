@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 285" role="img" aria-label="MAR 03 PROPOSAL: Lina · Architecture says Freeze the NoC at 1.2 GHz Friday?">
+<rect width="800" height="285" rx="20" fill="#0c1c22"/>
+<rect x="1" y="1" width="798" height="283" rx="19" fill="none" stroke="#2f5259" stroke-width="2"/>
+<rect x="28" y="33" width="7" height="219" rx="3" fill="#e11308"/>
+<text x="62" y="63" fill="#9ccbd3" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" text-anchor="start">MAR 03</text>
+<text x="748" y="63" fill="#9ccbd3" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" text-anchor="end">PROPOSAL</text>
+<text x="62" y="122" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Lina · Architecture</text>
+<text x="62" y="159" fill="#9dbbc1" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="500" text-anchor="start">Planning note</text>
+<text x="62" y="218" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="500" text-anchor="start">“Freeze the NoC at 1.2 GHz</text>
+<text x="62" y="258" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="500" text-anchor="start">Friday?”</text>
+</svg>
