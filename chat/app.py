@@ -10,6 +10,7 @@ Run:  uv run python -m chat.app         (or the one-command ``run_demo.sh``)
 from __future__ import annotations
 
 import html
+import hmac
 import ipaddress
 import os
 import re
@@ -396,17 +397,44 @@ def build_demo() -> gr.Blocks:
     return demo
 
 
+def load_ui_auth():
+    """Optional single-owner login; invalid configuration fails closed.
+
+    Credentials are read once at startup and never included in error messages.
+    This gate does not change memory scopes or permit remote binding.
+    """
+    enabled = os.environ.get("MEMORY_UI_AUTH_ENABLED", "0")
+    if enabled not in {"0", "1"}:
+        raise ValueError("MEMORY_UI_AUTH_ENABLED must be 0 or 1.")
+    if enabled == "0":
+        return None
+    username = os.environ.get("MEMORY_UI_USERNAME", "")
+    password = os.environ.get("MEMORY_UI_PASSWORD", "")
+    if not username.strip() or not password.strip():
+        raise ValueError("UI authentication requires MEMORY_UI_USERNAME and MEMORY_UI_PASSWORD.")
+    expected_user = username.encode("utf-8")
+    expected_password = password.encode("utf-8")
+
+    def authenticate(user: str, secret: str) -> bool:
+        user_matches = hmac.compare_digest(user.encode("utf-8"), expected_user)
+        password_matches = hmac.compare_digest(secret.encode("utf-8"), expected_password)
+        return user_matches & password_matches
+
+    return authenticate
+
+
 def main() -> None:
     _load_dotenv()
     name = os.environ.get("GRADIO_SERVER_NAME", "127.0.0.1")
     try:
         require_loopback(name)
+        auth = load_ui_auth()
     except ValueError as exc:
         sys.exit(f"error: {exc}")
     port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
     print(f"\n  memory-research chat demo → http://{name}:{port}\n")
     # share=False explicit: GRADIO_SHARE=1 would otherwise open a public tunnel.
-    build_demo().launch(server_name=name, server_port=port, show_api=False, share=False)
+    build_demo().launch(server_name=name, server_port=port, show_api=False, share=False, auth=auth)
 
 
 if __name__ == "__main__":

@@ -262,6 +262,28 @@ uv run python -m chat.app            # http://127.0.0.1:7860
 | **Evaluation** | Run a benchmark against the real engine from the browser. |
 | **System** | The architecture diagram, a system summary and the consolidation lifecycle. |
 
+### Optional UI login
+
+The local demo can require a single-owner login using Gradio's built-in
+session authentication. Set these variables in your environment (for
+`python -m chat.app`) or in the gitignored `.env` (for `./run_demo.sh`):
+
+```dotenv
+MEMORY_UI_AUTH_ENABLED=1
+MEMORY_UI_USERNAME=owner
+MEMORY_UI_PASSWORD=replace-with-a-unique-long-password
+```
+
+Authentication is disabled by default (`MEMORY_UI_AUTH_ENABLED=0`). When enabled,
+missing or blank credentials stop startup; an invalid enable flag also stops
+startup. Credentials are compared exactly, including spaces and Unicode.
+Restart the application after changing them. Never commit real credentials.
+
+This login gates the entire demo; it does not create separate users, memory
+scopes, or permissions. Loopback-only binding and `share=False` remain enforced.
+Remote/shared deployment still requires a separate security review; see
+[SECURITY.md](SECURITY.md).
+
 # Configuration
 
 Every setting is an environment variable read by `memory/config.py`.

@@ -291,3 +291,81 @@ def test_compose_publishes_postgres_on_loopback_only():
     text = (_ROOT / "docker-compose.yml").read_text()
     ports = re.findall(r'^\s*-\s*"([^"]*:\d+:\d+)"', text, re.M)
     assert ports and all(p.startswith("127.0.0.1:") for p in ports)
+
+
+@pytest.fixture
+def ui_auth_env(monkeypatch):
+    for key in ("MEMORY_UI_AUTH_ENABLED", "MEMORY_UI_USERNAME", "MEMORY_UI_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
+    return monkeypatch
+
+
+def test_ui_auth_disabled_by_default(ui_auth_env):
+    assert app.load_ui_auth() is None
+
+
+def test_ui_auth_exact_unicode_credentials(ui_auth_env):
+    ui_auth_env.setenv("MEMORY_UI_AUTH_ENABLED", "1")
+    ui_auth_env.setenv("MEMORY_UI_USERNAME", "owner-é")
+    ui_auth_env.setenv("MEMORY_UI_PASSWORD", " test-secret-é ")
+    auth = app.load_ui_auth()
+    assert auth("owner-é", " test-secret-é ") is True
+    assert auth("owner", " test-secret-é ") is False
+    assert auth("owner-é", "test-secret-é") is False
+    assert auth("", "") is False
+
+
+@pytest.mark.parametrize("username,password", [("", "secret"), ("owner", ""), (" ", "secret"), ("owner", " ")])
+def test_ui_auth_missing_credentials_prevent_launch(ui_auth_env, username, password):
+    ui_auth_env.setenv("MEMORY_UI_AUTH_ENABLED", "1")
+    ui_auth_env.setenv("MEMORY_UI_USERNAME", username)
+    ui_auth_env.setenv("MEMORY_UI_PASSWORD", password)
+    ui_auth_env.setenv("GRADIO_SERVER_NAME", "127.0.0.1")
+    ui_auth_env.setattr(app, "_load_dotenv", lambda: None)
+    ui_auth_env.setattr(app, "build_demo", lambda: pytest.fail("must not build UI"))
+    with pytest.raises(SystemExit, match="requires MEMORY_UI_USERNAME"):
+        app.main()
+
+
+def test_ui_auth_invalid_flag_fails_closed(ui_auth_env):
+    ui_auth_env.setenv("MEMORY_UI_AUTH_ENABLED", "typo")
+    with pytest.raises(ValueError, match="must be 0 or 1"):
+        app.load_ui_auth()
+
+
+def test_ui_auth_passed_to_gradio(ui_auth_env):
+    ui_auth_env.setenv("MEMORY_UI_AUTH_ENABLED", "1")
+    ui_auth_env.setenv("MEMORY_UI_USERNAME", "owner")
+    ui_auth_env.setenv("MEMORY_UI_PASSWORD", "test-secret")
+    ui_auth_env.setenv("GRADIO_SERVER_NAME", "127.0.0.1")
+    ui_auth_env.setattr(app, "_load_dotenv", lambda: None)
+    kw = {}
+
+    class Demo:
+        def launch(self, **kwargs):
+            kw.update(kwargs)
+
+    ui_auth_env.setattr(app, "build_demo", Demo)
+    app.main()
+    assert kw["auth"]("owner", "test-secret")
+    assert not kw["auth"]("owner", "wrong")
+    assert kw["share"] is False
+
+
+def test_gradio_auth_blocks_config_until_valid_login(ui_auth_env):
+    import gradio as gr
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    ui_auth_env.setenv("MEMORY_UI_AUTH_ENABLED", "1")
+    ui_auth_env.setenv("MEMORY_UI_USERNAME", "owner")
+    ui_auth_env.setenv("MEMORY_UI_PASSWORD", "test-secret")
+    with gr.Blocks() as demo:
+        gr.Textbox(label="Private demo")
+    api = gr.mount_gradio_app(FastAPI(), demo, path="/", auth=app.load_ui_auth())
+    with TestClient(api) as client:
+        assert client.get("/config").status_code == 401
+        assert client.post("/login", data={"username": "owner", "password": "wrong"}).status_code == 400
+        assert client.get("/config").status_code == 401
+        assert client.post("/login", data={"username": "owner", "password": "test-secret"}).status_code == 200
+        assert client.get("/config").status_code == 200
