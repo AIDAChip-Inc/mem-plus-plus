@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="docs/brand/mem-plus-plus-header.svg" width="100%" alt="Mem++ — AIDAChip Organization Memory">
+  <img src="docs/brand/mem-plus-plus-header.svg" width="100%" alt="Mem++ — AIDAChip Organizational Memory">
 </h1>
 
 <p align="center">
@@ -38,9 +38,10 @@
 
 # Introduction
 
-**Mem++** is a memory engine for LLM agents that work over an organization's record: the
-Slack threads, emails, meeting notes, tickets and documents that many people write over
-months and years, and that revise, supersede and contradict one another.
+**Mem++** is AIDAChip's organizational memory system for LLM agents that work over
+an organization's record: the Slack threads, emails, meeting notes, tickets and
+documents that many people write over months and years, and that revise, supersede
+and contradict one another.
 
 Most agent-memory systems are designed for *conversational* memory, where one user narrates
 their own facts to an assistant. They distil each exchange into a handful of facts at write
