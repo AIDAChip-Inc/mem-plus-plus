@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="paper/mempp_iclr2027_submission.pdf">Paper</a>
+  <a href="https://arxiv.org/abs/2610.02002">Paper</a>
   ·
   <a href="#quickstart">Quickstart</a>
   ·
@@ -31,7 +31,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16 with pgvector">
   <img src="https://img.shields.io/badge/ingest-zero%20LLM%20calls-2ea44f" alt="Zero LLM calls at ingest">
   <img src="https://img.shields.io/badge/memory-append--only-8250df" alt="Append-only memory">
-  <a href="paper/mempp_iclr2027_submission.pdf"><img src="https://img.shields.io/badge/paper-ICLR%202027%20(under%20review)-b31b1b" alt="Paper: ICLR 2027, under review"></a>
+  <a href="https://arxiv.org/abs/2610.02002"><img src="https://img.shields.io/badge/paper-arXiv%3A2610.02002-b31b1b" alt="Paper: arXiv 2610.02002"></a>
 </p>
 
 ---
@@ -360,7 +360,7 @@ paper's results are summarized in the next section.
 
 # Results
 
-All numbers in this section are **as reported in the paper** ([`paper/mempp_iclr2027_submission.pdf`](paper/mempp_iclr2027_submission.pdf), Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+All numbers in this section are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
 
 ### OrgMemBench
 
@@ -517,7 +517,7 @@ mempp/
 ├── datasets/fetch.py        benchmark downloader
 ├── tests/, tests_engine/    test suites
 ├── docs/figures/            figures used in this README
-├── paper/                   the paper (ICLR 2027 submission, under review)
+├── paper/                   local manuscript PDF
 ├── docker-compose.yml       PostgreSQL 16 + pgvector
 └── run_demo.sh              Docker-free local cluster and demo
 ```
@@ -536,11 +536,14 @@ End-to-end tests expect a migrated PostgreSQL reachable through `MEMORY_DATABASE
 If you use Mem++ or OrgMemBench, please cite:
 
 ```bibtex
-@misc{mempp2026,
-  title  = {Mem++: Non-Destructive Memory for Long-Term Organizational LLM Agents},
-  author = {Anonymous},
-  year   = {2026},
-  note   = {Under review at ICLR 2027}
+@misc{yehia2026memnondestructivememorylongterm,
+  title         = {Mem++: Non-Destructive Memory for Long-Term Organizational LLM Agents},
+  author        = {Ahmad Yehia and Aly O. Abdelkareem and Islam Ahmed and Hesham Omran and Khaled Alashmouny and Christian Claudel and Abduallah Mohamed},
+  year          = {2026},
+  eprint        = {2610.02002},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2610.02002}
 }
 ```
 
