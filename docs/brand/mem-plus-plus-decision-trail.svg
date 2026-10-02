@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="970" viewBox="0 0 1600 970" role="img">
+<title>Illustrative multi-author NoC decision trail</title>
+<desc>Six dated records from Architecture, Physical Design, Verification, and Program, culminating in a conditional joint decision and a later proposal.</desc>
+<rect width="1600" height="970" rx="30" fill="#050b0e"/>
+<rect x="25" y="25" width="750" height="290" rx="22" fill="#0d1c22" stroke="#31545c" stroke-width="2"/>
+<rect x="51" y="55" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="82" y="85" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 03</text>
+<text x="741" y="85" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">PROPOSAL</text>
+<text x="82" y="144" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Lina · Architecture</text>
+<text x="82" y="179" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">Planning note</text>
+<text x="82" y="245" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“Freeze the NoC at 1.2 GHz</text>
+<text x="82" y="285" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">Friday?”</text>
+<rect x="825" y="25" width="750" height="290" rx="22" fill="#0d1c22" stroke="#31545c" stroke-width="2"/>
+<rect x="851" y="55" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="882" y="85" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 03</text>
+<text x="1541" y="85" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">TIMING EVIDENCE</text>
+<text x="882" y="144" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Omar · Physical Design</text>
+<text x="882" y="179" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">STA report</text>
+<text x="882" y="245" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“SS/0.72V setup WNS is</text>
+<text x="882" y="285" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">−120 ps.”</text>
+<rect x="25" y="340" width="750" height="290" rx="22" fill="#0d1c22" stroke="#31545c" stroke-width="2"/>
+<rect x="51" y="370" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="82" y="400" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 04</text>
+<text x="741" y="400" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">ECO UPDATE</text>
+<text x="82" y="459" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Omar · Physical Design</text>
+<text x="82" y="494" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">Timing thread</text>
+<text x="82" y="560" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“Clock ECO improves WNS to −35 ps.</text>
+<text x="82" y="600" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">MCMM sign-off remains open.”</text>
+<rect x="825" y="340" width="750" height="290" rx="22" fill="#0d1c22" stroke="#31545c" stroke-width="2"/>
+<rect x="851" y="370" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="882" y="400" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 05</text>
+<text x="1541" y="400" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">VERIFICATION</text>
+<text x="882" y="459" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Maya + Omar · Verification + PD</text>
+<text x="882" y="494" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">Sign-off thread</text>
+<text x="882" y="560" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“ECO netlist regression passes;</text>
+<text x="882" y="600" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">SS/0.72V WNS reaches +18 ps.”</text>
+<rect x="25" y="655" width="750" height="290" rx="22" fill="#181418" stroke="#e11308" stroke-width="2"/>
+<rect x="51" y="685" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="82" y="715" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 05</text>
+<text x="741" y="715" fill="#ff5449" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">JOINT DECISION</text>
+<text x="82" y="774" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Architecture + PD + Verification</text>
+<text x="82" y="809" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">Joint review minutes</text>
+<text x="82" y="875" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“Freeze the NoC Monday,</text>
+<text x="82" y="915" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">pending MCMM sign-off.”</text>
+<rect x="825" y="655" width="750" height="290" rx="22" fill="#0d1c22" stroke="#31545c" stroke-width="2"/>
+<rect x="851" y="685" width="7" height="230" rx="3" fill="#e11308"/>
+<text x="882" y="715" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="start">MAR 06</text>
+<text x="1541" y="715" fill="#a4cbd2" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" text-anchor="end">NEW PROPOSAL</text>
+<text x="882" y="774" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700" text-anchor="start">Priya · Program</text>
+<text x="882" y="809" fill="#a7bbc0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="500" text-anchor="start">Follow-up message</text>
+<text x="882" y="875" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">“Can we restore the Friday</text>
+<text x="882" y="915" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" text-anchor="start">freeze?”</text>
+</svg>
