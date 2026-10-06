@@ -532,14 +532,24 @@ left after dropping category 5. Each set of answers was judged twice, once with 
 |:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `gpt-4.1-mini` | `repo` | 73.5 | 45.8 | 48.9 | 78.7 | 70.1 | – |
 | `gpt-4.1-mini` | `mem0` | 81.3 | 58.3 | 75.2 | 87.6 | 82.2 | 81.5 |
-| `gpt-4o-mini` | `repo` | TODO | TODO | TODO | TODO | 64.0 | – |
-| `gpt-4o-mini` | `mem0` | TODO | TODO | TODO | TODO | TODO | 77.4 |
+| `gpt-4o-mini` | `repo` | 66.4 | 43.8 | 41.5 | 73.0 | 64.0 | – |
+| `gpt-4o-mini` | `mem0` | 75.4 | 50.0 | 68.4 | 84.3 | 77.4 | 77.4 |
 
-LongMemEval<sub>S</sub> (470 questions, `longmemeval` judge prompt): **TODO**, per question
-type, for `gpt-4o-mini` (paper average 72.2) and `gpt-4.1-mini` (paper average 74.7).
+LongMemEval<sub>S</sub>, 470 non-abstention questions, with the LongMemEval column of the settings
+above (weights 1/1/4, 50 candidates, conjunctive lexical matching), *k* = 50, the in-house
+answer prompt, and the official per-type `longmemeval` judge prompt on `gpt-4o-mini`:
 
-> **TODO (before merge):** fill in the `gpt-4o-mini` LoCoMo rows (per-category scores, and the
-> `mem0` overall) and the LongMemEval<sub>S</sub> results.
+| Answerer | Preference | Assistant | Temporal | Multi-session | Knowledge update | User | Overall | Paper |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `gpt-4o-mini` | 50.0 | 96.4 | 45.7 | 60.3 | 84.7 | 98.4 | 68.9 | 72.2 |
+| `gpt-4.1-mini` | 53.3 | 94.6 | 54.3 | 55.4 | 84.7 | 100.0 | 70.2 | 74.7 |
+
+LoCoMo reproduces to within 0.7 points under the paper's judge. LongMemEval<sub>S</sub> comes out
+3.3 and 4.5 points lower; almost all of the gap is temporal reasoning (−11.0 and −14.2 points).
+The LongMemEval adapter does not pass `question_date` to the answerer, so questions such as
+"how many days ago…" cannot be anchored to the question's date. The other five types match the
+paper within one or two questions. These are single runs; the 95% binomial interval is about
+±4 points at n = 470.
 
 The re-run at `ffed8c5` predates the flags above, so category 5 was dropped outside the harness
 and the `mem0` scores come from re-judging the same answers. With this version of the harness
