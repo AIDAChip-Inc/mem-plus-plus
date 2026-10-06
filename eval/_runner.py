@@ -12,7 +12,8 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from .adapters.base import Conversation
-from .harness import MAX_WORKERS, print_summary, run_benchmark
+from .harness import MAX_WORKERS, exclude_abstention_items, print_summary, run_benchmark
+from .judge import JUDGE_PROMPTS, default_judge_prompt
 from .memory_client import DEFAULT_K, MemoryClient, StubMemoryClient
 
 
@@ -37,7 +38,19 @@ def build_parser(benchmark: str, default_data: str) -> argparse.ArgumentParser:
     p.add_argument("--judge-model", default=None,
                    help="judge model: a friendly name (haiku|sonnet|opus) or a raw model id; "
                         "default = the pinned reproducibility judge (haiku). The judge PROMPT "
-                        "version is fixed regardless — only the model swaps.")
+                        "is chosen separately with --judge-prompt.")
+    p.add_argument("--judge-prompt", choices=JUDGE_PROMPTS,
+                   default=default_judge_prompt(benchmark),
+                   help="judge prompt: repo (in-house, stricter), mem0 (Mem0's LoCoMo judge, "
+                        "verbatim), longmemeval (official per-question-type prompts, verbatim). "
+                        f"Default for {benchmark}: %(default)s (the paper's setup).")
+    flag = _QUESTION_FILTER_FLAG.get(benchmark)
+    if flag is not None:
+        name, what = flag
+        p.add_argument(f"--{name}", action=argparse.BooleanOptionalAction, default=True,
+                       help=f"drop {what} questions before running (default: on, matching the "
+                            "paper's question count); the filter and n are recorded in the "
+                            "results JSON")
     p.add_argument("--answer-model", default=None,
                    help="answer model: a friendly name (haiku|sonnet|opus) or a raw model id; "
                         "default = the pinned reproducibility answerer (haiku).")
@@ -48,6 +61,15 @@ def build_parser(benchmark: str, default_data: str) -> argparse.ArgumentParser:
                         "outside every timed region — use only when offline; the "
                         "summary then reports memory_tokens=None rather than a guess)")
     return p
+
+
+# Per-benchmark unanswerable-question filter: (CLI flag name, description).
+# LoCoMo category 5 (adversarial, 446 items) -> 1,540 questions, as in the paper
+# and every copied baseline. LongMemEval_S abstention (30 ``_abs`` items) -> 470.
+_QUESTION_FILTER_FLAG = {
+    "locomo": ("exclude-adversarial", "LoCoMo category-5 (adversarial)"),
+    "longmemeval": ("exclude-abstention", "LongMemEval abstention (_abs)"),
+}
 
 
 def _stub_answer_fn():
@@ -64,23 +86,42 @@ def _stub_answer_fn():
     return answer_fn
 
 
-def _stub_judge_fn():
+# Stub-judge reply per judge prompt: (correct, incorrect), in the format the
+# prompt's parser expects.
+_STUB_VERDICTS = {
+    "repo": ("CORRECT", "INCORRECT"),
+    "mem0": ('{"label": "CORRECT"}', '{"label": "WRONG"}'),
+    "longmemeval": ("yes", "no"),
+}
+_GOLD_LABELS = ("Gold answer:", "Correct Answer:", "Rubric:", "Explanation:")
+_GEN_LABELS = ("Generated answer:", "Model Response:")
+
+
+def _stub_judge_fn(judge_prompt: str = "repo"):
     from .metrics import token_f1
+
+    yes, no = _STUB_VERDICTS[judge_prompt]
 
     def judge_fn(prompt: str) -> str:
         # Crude stand-in: CORRECT when generated overlaps gold. For dry-runs only.
-        gold = _extract(prompt, "Gold answer:")
-        gen = _extract(prompt, "Generated answer:")
-        return "CORRECT" if token_f1(gen, gold) >= 0.5 else "INCORRECT"
+        gold = _extract(prompt, _GOLD_LABELS)
+        gen = _extract(prompt, _GEN_LABELS)
+        return yes if token_f1(gen, gold) >= 0.5 else no
 
     return judge_fn
 
 
-def _extract(prompt: str, label: str) -> str:
+def _extract(prompt: str, labels: tuple[str, ...] | str) -> str:
+    """Value of the LAST line starting with one of ``labels`` (the mem0 prompt
+    carries an in-prompt example "Gold answer:" before the real one)."""
+    if isinstance(labels, str):
+        labels = (labels,)
+    found = ""
     for line in prompt.splitlines():
-        if line.startswith(label):
-            return line[len(label):].strip()
-    return ""
+        for label in labels:
+            if line.startswith(label):
+                found = line[len(label):].strip()
+    return found
 
 
 def run(
@@ -108,9 +149,19 @@ def run(
     if args.limit:
         conversations = conversations[: args.limit]
 
+    question_filter = None
+    flag = _QUESTION_FILTER_FLAG.get(benchmark)
+    if flag is not None and getattr(args, flag[0].replace("-", "_")):
+        label = flag[0].removeprefix("exclude-")
+        conversations, question_filter = exclude_abstention_items(conversations, label=label)
+    elif flag is not None:
+        n = sum(len(c.qa) for c in conversations)
+        question_filter = {"exclude": None, "n_questions_before": n,
+                           "n_excluded": 0, "n_questions_after": n}
+
     if args.stub:
         memory = StubMemoryClient()
-        answer_fn, judge_fn = _stub_answer_fn(), _stub_judge_fn()
+        answer_fn, judge_fn = _stub_answer_fn(), _stub_judge_fn(args.judge_prompt)
     else:
         memory = MemoryClient()
         if args.recall_only:
@@ -121,11 +172,12 @@ def run(
             # Build from the selected models (None => pinned default) so the fn
             # and the model recorded by run_benchmark are the same choice.
             answer_fn = make_answer_fn(args.answer_model)
-            judge_fn = make_judge_fn(args.judge_model)
+            judge_fn = make_judge_fn(args.judge_model, judge_prompt=args.judge_prompt)
 
     results = run_benchmark(
         conversations, memory, answer_fn=answer_fn, judge_fn=judge_fn,
         judge_model=args.judge_model, answer_model=args.answer_model,
+        judge_prompt=args.judge_prompt, question_filter=question_filter,
         k=args.k, recall_only=args.recall_only, benchmark=benchmark,
         backend="stub" if args.stub else "engine",
         sample_fraction=args.fraction, workers=args.workers,

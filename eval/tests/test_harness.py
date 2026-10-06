@@ -69,8 +69,9 @@ def test_missing_fns_are_built_from_pinned_default(monkeypatch):
         assert model == llm_mod.ANSWER_MODEL  # None resolved to the pin
         return _echo_answer_fn
 
-    def fake_make_judge(model=None):
+    def fake_make_judge(model=None, judge_prompt="repo"):
         assert model == judge_mod.JUDGE_MODEL
+        assert judge_prompt == "repo"  # benchmark "t" has no paper default
         return _lenient_judge_fn
 
     monkeypatch.setattr(llm_mod, "make_answer_fn", fake_make_answer)
