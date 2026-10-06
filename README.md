@@ -354,13 +354,37 @@ uv run python -m eval.run_locomo --k 50 \
 | `--fraction`, `--limit` | Evaluate a deterministic fraction of questions, or cap the number of conversations. |
 | `--reuse-ingest` | Skip ingest for scopes that already hold memories. |
 | `--stub` | In-memory backend with echo answer and judge, for wiring checks. |
+| `--judge-prompt {repo,mem0,longmemeval}` | Judge prompt. The default depends on the benchmark (below). |
+| `--exclude-adversarial` / `--no-exclude-adversarial` | LoCoMo only. Drop the 446 category-5 (adversarial) questions. On by default, giving the paper's 1,540. |
+| `--exclude-abstention` / `--no-exclude-abstention` | LongMemEval only. Drop the 30 abstention (`_abs`) questions. On by default, giving the paper's 470. |
 
-`eval.run_longmemeval`, `eval.run_longbench` and `eval.run_membench` take the same flags. The
-paper's results are summarized in the next section.
+`eval.run_longmemeval`, `eval.run_longbench` and `eval.run_membench` take the same flags,
+except that each question filter exists only for its own benchmark.
+
+**Judge prompts.** The harness ships three judge prompts. The default for each benchmark is the
+one the paper used:
+
+| `--judge-prompt` | Source | Reply | Default for |
+|---|---|---|---|
+| `mem0` | Mem0's LoCoMo judge (`ACCURACY_PROMPT` in `evaluation/metrics/llm_judge.py` of [mem0ai/mem0](https://github.com/mem0ai/mem0/blob/aae5989e78a6188b3b047c104d960c9ad0927e75/evaluation/metrics/llm_judge.py)), verbatim. Apache-2.0. | JSON `{"label": "CORRECT" \| "WRONG"}` | LoCoMo |
+| `longmemeval` | The official per-question-type prompts, including the abstention prompt (`get_anscheck_prompt` in `src/evaluation/evaluate_qa.py` of [xiaowu0162/LongMemEval](https://github.com/xiaowu0162/LongMemEval/blob/d6dc8b50a2d9ac0c99485ea28fa5755c62414c34/src/evaluation/evaluate_qa.py)), verbatim. MIT. | `yes` / `no` | LongMemEval |
+| `repo` | The in-house prompt in [`eval/judge_prompt.txt`](eval/judge_prompt.txt). | `CORRECT` / `INCORRECT` | LongBench, MemBench |
+
+The judge runs at temperature 0 with every prompt. The in-house `repo` prompt is stricter than
+the other two: it asks whether the answer conveys the same information as the gold answer,
+while Mem0's prompt tells the judge to "be generous" and accept any answer that touches on the
+same topic. On the same LoCoMo answers the `repo` judge scores about 12 points lower (see
+[Independent reproduction](#independent-reproduction)). The results JSON records the prompt
+name and version (`judge_prompt`, `judge_prompt_version`), the question filter and the number
+of questions before and after it (`question_filter`), and the recall parameters actually in
+effect, including any `MEMORY_RRF_W_*`, `MEMORY_CANDIDATE_LIMIT` and `MEMORY_LEXICAL_OR`
+overrides (`recall_params`).
+
+The paper's results are summarized in the next section.
 
 # Results
 
-All numbers in this section are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+All numbers in this section, except [Independent reproduction](#independent-reproduction), are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
 
 ### OrgMemBench
 
@@ -497,6 +521,41 @@ OrgMemBench score of Mem++ as the number of retrieved rows *k* varies. The dashe
 | 100 | 44.89 | 56.54 | 3.63M |
 | Full Context | 16.85 | 21.52 | 18.68M |
 
+### Independent reproduction
+
+An independent re-run of Mem++ (2026-10-06, repository at `ffed8c5`): `text-embedding-3-small`
+with the LoCoMo settings above, *k* = 50, `gpt-4o-mini` judge, and the 1,540 LoCoMo questions
+left after dropping category 5. Each set of answers was judged twice, once with the in-house
+`repo` prompt and once with Mem0's prompt. LoCoMo LLM-judge score:
+
+| Answerer | Judge prompt | Temporal | Open domain | Multi-hop | Single-hop | Overall | Paper |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `gpt-4.1-mini` | `repo` | 73.5 | 45.8 | 48.9 | 78.7 | 70.1 | – |
+| `gpt-4.1-mini` | `mem0` | 81.3 | 58.3 | 75.2 | 87.6 | 82.2 | 81.5 |
+| `gpt-4o-mini` | `repo` | TODO | TODO | TODO | TODO | 64.0 | – |
+| `gpt-4o-mini` | `mem0` | TODO | TODO | TODO | TODO | TODO | 77.4 |
+
+LongMemEval<sub>S</sub> (470 questions, `longmemeval` judge prompt): **TODO**, per question
+type, for `gpt-4o-mini` (paper average 72.2) and `gpt-4.1-mini` (paper average 74.7).
+
+> **TODO (before merge):** fill in the `gpt-4o-mini` LoCoMo rows (per-category scores, and the
+> `mem0` overall) and the LongMemEval<sub>S</sub> results.
+
+The re-run at `ffed8c5` predates the flags above, so category 5 was dropped outside the harness
+and the `mem0` scores come from re-judging the same answers. With this version of the harness
+the same LoCoMo run is one command (`--judge-prompt mem0` and `--exclude-adversarial` are the
+LoCoMo defaults; add `--judge-prompt repo` for the in-house judge):
+
+```bash
+MEMORY_EMBEDDING_BACKEND=openai uv run --extra openai python -m eval.run_locomo --k 50 \
+    --answer-model gpt-4.1-mini --judge-model gpt-4o-mini \
+    --workers 8 --out runs/locomo_k50_gpt41mini.json
+```
+
+The Mem0 judge prompt is lenient ("be generous"), and every copied LoCoMo baseline was scored
+with it too, so these numbers are comparable to the baselines but higher than a strict judge
+gives.
+
 # Project structure
 
 ```
@@ -550,3 +609,8 @@ If you use Mem++ or OrgMemBench, please cite:
 # License
 
 Apache 2.0 — see the [LICENSE](LICENSE) file for details.
+
+`eval/judge.py` reproduces two third-party judge prompts verbatim: Mem0's LoCoMo judge prompt
+(Apache-2.0, [mem0ai/mem0](https://github.com/mem0ai/mem0)) and the LongMemEval answer-check
+prompts (MIT, [xiaowu0162/LongMemEval](https://github.com/xiaowu0162/LongMemEval)). The
+attribution and license notes are kept beside them in the source.

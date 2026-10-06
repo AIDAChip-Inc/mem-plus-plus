@@ -177,10 +177,12 @@ def test_flag_env_override(monkeypatch):
 def test_preserved_ranking_constants():
     assert config.MEMORY_RECALL_K == 24
     assert config.MEMORY_RRF_K == 60
-    assert (config.MEMORY_RRF_W_FUZZY, config.MEMORY_RRF_W_TAG, config.MEMORY_RRF_W_VECTOR) == (1.0, 1.0, 4.0)
+    # Documented defaults in memory/config.py (vector 2.0, candidate cap 200;
+    # the ORG arms override to 4.0 / 50 via env).
+    assert (config.MEMORY_RRF_W_FUZZY, config.MEMORY_RRF_W_TAG, config.MEMORY_RRF_W_VECTOR) == (1.0, 1.0, 2.0)
     assert config.RECENCY_HALF_LIFE_DAYS == 7.0
     assert config.MEMORY_RECALL_RECENT_RESERVE == 3
-    assert config.CANDIDATE_LIMIT == 50
+    assert config.CANDIDATE_LIMIT == 200
     assert config.SALIENCE_MATCH_BAND == 1000.0
     assert config.EMBEDDING_DIM == 384
 

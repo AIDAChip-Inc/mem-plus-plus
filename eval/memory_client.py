@@ -8,8 +8,10 @@ Nizam's interface contract::
     memory.recall.store_facts(persona, content, mode='auto')       -> dict
     memory.recall.store_facts_verbatim(persona, facts)             -> dict
 
-Preserved recall params (parity docs): top-k=24, RRF K=60, weights 1/1/4,
-half-life 7d.
+Recall params: top-k=24, RRF K=60, half-life 7d. The RRF leg weights, the
+per-leg candidate cap and the lexical-OR switch are env-overridable in
+``memory.config``; ``live_recall_params()`` reads the values actually in effect
+so the results JSON records them.
 
 Everything goes through this one file so that if the import path shifts at
 integration, only ``_ENGINE_IMPORT_PATH`` changes. The import is lazy — a
@@ -25,11 +27,28 @@ from typing import Any, Protocol
 
 _ENGINE_IMPORT_PATH = "memory.recall"
 
-# Preserved recall parameters — documented here so parity claims cite one place.
+# Recall parameter DEFAULTS (memory/config.py with no env overrides). For what
+# a run actually used, call live_recall_params(); these are display fallbacks.
 DEFAULT_K = 24
 RRF_K = 60
-RRF_WEIGHTS = (1, 1, 4)
+RRF_WEIGHTS = (1.0, 1.0, 2.0)  # fuzzy / tag / vector
 HALF_LIFE_DAYS = 7
+
+
+def live_recall_params() -> dict:
+    """The engine's recall parameters as currently configured, env overrides
+    included (MEMORY_RRF_W_FUZZY / _TAG / _VECTOR, MEMORY_CANDIDATE_LIMIT,
+    MEMORY_LEXICAL_OR). ``memory.config`` reads the environment at import, so
+    this reflects the process the run executes in."""
+    cfg = importlib.import_module("memory.config")
+    return {
+        "rrf_k": cfg.MEMORY_RRF_K,
+        "weights": [cfg.MEMORY_RRF_W_FUZZY, cfg.MEMORY_RRF_W_TAG, cfg.MEMORY_RRF_W_VECTOR],
+        "weights_order": ["fuzzy", "tag", "vector"],
+        "candidate_limit": cfg.CANDIDATE_LIMIT,
+        "lexical_or": cfg.MEMORY_LEXICAL_OR,
+        "half_life_days": cfg.RECENCY_HALF_LIFE_DAYS,
+    }
 
 
 class MemoryBackend(Protocol):

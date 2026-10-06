@@ -28,7 +28,13 @@ from typing import Any
 
 from . import metrics
 from .adapters.base import Conversation, Turn
-from .judge import JUDGE_MODEL, JUDGE_PROMPT_VERSION, judge_accuracy, judge_one
+from .judge import (
+    JUDGE_MODEL,
+    JUDGE_PROMPT_VERSIONS,
+    default_judge_prompt,
+    judge_accuracy,
+    judge_one,
+)
 from .llm import (
     ANSWER_MODEL,
     ANSWER_PROMPT_VERSION,
@@ -36,7 +42,7 @@ from .llm import (
     build_answer_prompt,
     resolve_model,
 )
-from .memory_client import DEFAULT_K, HALF_LIFE_DAYS, RRF_K, RRF_WEIGHTS
+from .memory_client import DEFAULT_K, live_recall_params
 from .sysinfo import describe_machine
 from .token_counter import TokenCounter
 
@@ -197,6 +203,32 @@ def select_qa_fraction(
     return out
 
 
+def exclude_abstention_items(
+    conversations: Sequence[Conversation], *, label: str = "abstention"
+) -> tuple[list[Conversation], dict]:
+    """Drop unanswerable (``abstention=True``) questions, and any conversation left
+    with no questions. LoCoMo category 5 (adversarial) and LongMemEval ``_abs``
+    items are both marked ``abstention`` by their adapters.
+
+    Returns ``(conversations, filter_record)``; the record is what
+    ``run_benchmark(question_filter=...)`` stores in the results config.
+    """
+    kept: list[Conversation] = []
+    n_before = n_removed = 0
+    for conv in conversations:
+        n_before += len(conv.qa)
+        qa = [item for item in conv.qa if not item.abstention]
+        n_removed += len(conv.qa) - len(qa)
+        if qa:
+            kept.append(Conversation(conversation_id=conv.conversation_id, turns=conv.turns, qa=qa))
+    return kept, {
+        "exclude": label,
+        "n_questions_before": n_before,
+        "n_excluded": n_removed,
+        "n_questions_after": n_before - n_removed,
+    }
+
+
 def _run_conversation(
     conv: Conversation,
     memory: Any,
@@ -210,6 +242,7 @@ def _run_conversation(
     update_hits: bool = False,
     on_question: Callable[[], None] | None = None,
     token_counter: TokenCounter | None = None,
+    judge_prompt: str = "repo",
 ) -> tuple[list[QAResult], int, bool]:
     """Ingest one conversation then score all its questions. Self-contained unit
     of work — the parallel granularity. Ingest completes before any recall, and
@@ -291,6 +324,8 @@ def _run_conversation(
                 gold_answer=item.primary_gold,
                 generated_answer=reply.text,
                 abstention=item.abstention,
+                judge_prompt=judge_prompt,
+                category=item.category,
             )
 
         # Exact memory-token count. Deliberately LAST: count_tokens is a network
@@ -344,6 +379,8 @@ def run_benchmark(
     update_hits: bool = False,
     progress_cb: Callable[[int, int], None] | None = None,
     count_tokens: bool = True,
+    judge_prompt: str | None = None,
+    question_filter: dict | None = None,
 ) -> dict:
     """Run the full ingest→recall→answer→judge→score loop. Returns a results dict.
 
@@ -381,7 +418,14 @@ def run_benchmark(
 
     ``progress_cb`` (if given) is invoked ``(done, total)`` as each question completes;
     increments are serialized under a lock so it is safe to render a progress bar from
-    a parallel (``workers>1``) run. It is a no-op when None."""
+    a parallel (``workers>1``) run. It is a no-op when None.
+
+    ``judge_prompt`` picks the judge prompt (``repo`` / ``mem0`` / ``longmemeval``,
+    see ``eval.judge``); ``None`` uses the paper's default for ``benchmark``
+    (``judge.default_judge_prompt``). The name and its version are recorded in
+    the config. ``question_filter`` is a description of any question filter the
+    caller applied before this call (see ``exclude_abstention_items``); it is
+    recorded verbatim so the results state which question set produced them."""
     if workers < 1:
         raise ValueError(f"workers must be >= 1, got {workers}")
 
@@ -390,13 +434,17 @@ def run_benchmark(
     # can never drift from the model actually queried.
     resolved_answer = resolve_model(answer_model, ANSWER_MODEL)
     resolved_judge = resolve_model(judge_model, JUDGE_MODEL)
+    resolved_judge_prompt = judge_prompt or default_judge_prompt(benchmark)
+    if resolved_judge_prompt not in JUDGE_PROMPT_VERSIONS:
+        raise ValueError(f"unknown judge_prompt {resolved_judge_prompt!r}; "
+                         f"choose from {tuple(JUDGE_PROMPT_VERSIONS)}")
     if not recall_only:
         if answer_fn is None:
             from .llm import make_answer_fn  # noqa: PLC0415 — lazy: keeps anthropic optional
             answer_fn = make_answer_fn(resolved_answer)
         if judge_fn is None:
             from .judge import make_judge_fn  # noqa: PLC0415 — lazy: keeps anthropic optional
-            judge_fn = make_judge_fn(resolved_judge)
+            judge_fn = make_judge_fn(resolved_judge, judge_prompt=resolved_judge_prompt)
 
     conversations = select_qa_fraction(conversations, sample_fraction)
 
@@ -431,7 +479,7 @@ def run_benchmark(
             conv, memory, answer_fn=answer_fn, judge_fn=judge_fn,
             k=k, recall_only=recall_only, persona=persona,
             reuse_ingest=reuse_ingest, update_hits=update_hits, on_question=_tick,
-            token_counter=counter,
+            token_counter=counter, judge_prompt=resolved_judge_prompt,
         )
 
     try:
@@ -487,10 +535,16 @@ def run_benchmark(
         "answer_prompt_version": None if recall_only else ANSWER_PROMPT_VERSION,
         "judge_model": None if recall_only else resolved_judge,
         "judge_model_pinned_default": JUDGE_MODEL,
-        "judge_prompt_version": None if recall_only else JUDGE_PROMPT_VERSION,
+        "judge_prompt": None if recall_only else resolved_judge_prompt,
+        "judge_prompt_version": (
+            None if recall_only else JUDGE_PROMPT_VERSIONS[resolved_judge_prompt]),
         "prompt_versions_pinned": True,
-        "recall_params": {"rrf_k": RRF_K, "weights": list(RRF_WEIGHTS),
-                          "half_life_days": HALF_LIFE_DAYS},
+        # Read from the engine config at run time, so env overrides
+        # (MEMORY_RRF_W_*, MEMORY_CANDIDATE_LIMIT, MEMORY_LEXICAL_OR) are recorded
+        # as actually used. Not meaningful for backend=stub.
+        "recall_params": live_recall_params(),
+        # Which questions were scored: the filter applied (if any) and n.
+        "question_filter": question_filter,
         "sample_fraction": sample_fraction,
         "sample_seed": None if sample_fraction == 1.0 else SAMPLE_SEED,
         "workers": resolved_workers,
@@ -650,9 +704,14 @@ def print_summary(results: dict) -> None:
             note += (f"; ingested {reing} anyway (no prior memories — recall "
                      f"would be empty otherwise)")
         print(note)
+    qf = cfg.get("question_filter")
+    if qf and qf.get("exclude"):
+        print(f"  questions:  excluded {qf['n_excluded']} {qf['exclude']} of "
+              f"{qf['n_questions_before']} -> {qf['n_questions_after']}")
     if not cfg["recall_only"]:
         print(f"  answer={cfg['answer_model']} ({cfg['answer_prompt_version']})  "
-              f"judge={cfg['judge_model']} ({cfg['judge_prompt_version']})")
+              f"judge={cfg['judge_model']} "
+              f"(prompt={cfg.get('judge_prompt')}, {cfg['judge_prompt_version']})")
         print("  (model user-selected; prompt versions pinned — default judge "
               f"pin={cfg['judge_model_pinned_default']})")
     print("  retrieval:  recall@k={recall_at_k}  MRR={mrr}  nDCG@k={ndcg_at_k}".format(**s))
