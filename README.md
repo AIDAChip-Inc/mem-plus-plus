@@ -551,7 +551,9 @@ LoCoMo reproduces to within 0.7 points under the paper's judge, and LongMemEval<
 within 0.1 and 1.7 points. Before the fix the adapter dropped `question_date`, so questions such
 as "how many days ago…" could not be anchored, and the scores were 68.9 / 70.2 (temporal 45.7 /
 54.3). The bound is set at the end of the question's day because 70 evidence sessions in
-LongMemEval<sub>S</sub> are timestamped later on the same day as their question. These are single
+LongMemEval<sub>S</sub> are timestamped later on the same day as their question. A strict bound at
+the question's exact time hides that evidence and scores 68.5 / 72.3; the end-of-day bound was chosen
+after seeing that result. These are single
 runs; the 95% binomial interval is about ±4 points at n = 470, and preference (n = 30) moves
 about 3 points per question.
 
