@@ -24,6 +24,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, time
 from typing import Any
 
 from . import metrics
@@ -273,9 +274,19 @@ def _run_conversation(
     conv_persona = f"{persona}:{conv.conversation_id}"
     facts = [t.render() for t in conv.turns]
     by_render = {fact: turn.turn_id for fact, turn in zip(facts, conv.turns, strict=True)}
+    # A conversation asked "as of" a date (LongMemEval question_date) stores each
+    # turn's event time as occurred_at. The as-of bound (occurred_at <= θ) only
+    # reaches dated rows, and the recency reserve slots then rank by event time
+    # instead of ingest time. Undated conversations are stored exactly as before.
+    as_of = any(item.question_date is not None for item in conv.qa)
+    payload: list = (
+        [{"summary": fact, "occurred_at": t.occurred_at.isoformat() if t.occurred_at else None}
+         for fact, t in zip(facts, conv.turns, strict=True)]
+        if as_of else facts
+    )
     ingested = not (reuse_ingest and memory.count_facts(conv_persona) > 0)
     if ingested:
-        memory.store_facts_verbatim(conv_persona, facts)
+        memory.store_facts_verbatim(conv_persona, payload)
     storage = metrics.storage_footprint_bytes(facts)
 
     rows: list[QAResult] = []
@@ -286,9 +297,13 @@ def _run_conversation(
         # MemoryClient.recall_facts — con_matrix._recall, con_mem0g._recall,
         # con_graph3._recall — has its graph expansion timed here too, which is
         # correct: that work is part of producing the cards the answerer sees.
+        # Undated questions keep the original call, so backends without the
+        # occurred_before keyword still work.
+        bound = ({"occurred_before": as_of_bound(item.question_date)}
+                 if item.question_date is not None else {})
         with metrics.measure_latency() as t:
             recalled = memory.recall_facts(
-                conv_persona, item.question, k=k, update_hits=update_hits
+                conv_persona, item.question, k=k, update_hits=update_hits, **bound
             )
         latency = t[0]
         # ── end of the timed region ─────────────────────────────────────────
@@ -307,7 +322,8 @@ def _run_conversation(
         answer_text: str | None = None
         answer_latency = 0.0
         if not recall_only:
-            prompt = build_answer_prompt(context=context, question=item.question)
+            prompt = build_answer_prompt(context=context, question=item.question,
+                                         question_date=item.question_date)
             # ── TOTAL latency = search + THIS. The judge below is excluded. ──
             with metrics.measure_latency() as ta:
                 reply = answer_fn(prompt)  # type: ignore[misc]
@@ -351,6 +367,17 @@ def _run_conversation(
         if on_question is not None:
             on_question()
     return rows, storage, ingested
+
+
+def as_of_bound(question_date: datetime) -> datetime:
+    """The recall bound θ for a question asked on ``question_date``: the END of
+    that calendar day. LongMemEval's question date is day-granular in practice:
+    in longmemeval_s, 70 evidence sessions carry a time later than their
+    question's ``question_date`` on the same day (none on a later day), so a
+    bound at the exact timestamp drops gold evidence for 41 of the 470 scored
+    questions. Bounding at the day keeps every same-day session and still
+    excludes every later day."""
+    return datetime.combine(question_date.date(), time.max, tzinfo=question_date.tzinfo)
 
 
 def _is_rate_limit(exc: BaseException) -> bool:
@@ -552,6 +579,11 @@ def run_benchmark(
         # Recorded because it changes whether retrieval scores are order-independent
         # (False) or carry a cross-question usage-feedback effect (True).
         "update_hits": update_hits,
+        # Questions with a date (LongMemEval question_date): recall is bounded to
+        # occurred_at <= that date and the answer prompt carries it as the
+        # current date. 0 for undated benchmarks.
+        "n_questions_dated": sum(
+            1 for c in conversations for q in c.qa if q.question_date is not None),
         # When reuse_ingest is on: how many conversations reused prior memories vs.
         # were (re)ingested because their scope was empty (the "ingest anyway" note).
         "n_conversations_reused": n_reused,

@@ -537,19 +537,25 @@ left after dropping category 5. Each set of answers was judged twice, once with 
 
 LongMemEval<sub>S</sub>, 470 non-abstention questions, with the LongMemEval column of the settings
 above (weights 1/1/4, 50 candidates, conjunctive lexical matching), *k* = 50, the in-house
-answer prompt, and the official per-type `longmemeval` judge prompt on `gpt-4o-mini`:
+answer prompt, and the official per-type `longmemeval` judge prompt on `gpt-4o-mini`. This run
+includes the `question_date` fix: each question's date bounds recall (rows dated up to the end of
+that day), each turn is stored with its session date, and the answerer is given the date as the
+current date.
 
 | Answerer | Preference | Assistant | Temporal | Multi-session | Knowledge update | User | Overall | Paper |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `gpt-4o-mini` | 50.0 | 96.4 | 45.7 | 60.3 | 84.7 | 98.4 | 68.9 | 72.2 |
-| `gpt-4.1-mini` | 53.3 | 94.6 | 54.3 | 55.4 | 84.7 | 100.0 | 70.2 | 74.7 |
+| `gpt-4o-mini` | 53.3 | 96.4 | 52.0 | 64.5 | 86.1 | 98.4 | 72.1 | 72.2 |
+| `gpt-4.1-mini` | 43.3 | 94.6 | 70.1 | 62.0 | 90.3 | 100.0 | 76.4 | 74.7 |
 
-LoCoMo reproduces to within 0.7 points under the paper's judge. LongMemEval<sub>S</sub> comes out
-3.3 and 4.5 points lower; almost all of the gap is temporal reasoning (−11.0 and −14.2 points).
-The LongMemEval adapter does not pass `question_date` to the answerer, so questions such as
-"how many days ago…" cannot be anchored to the question's date. The other five types match the
-paper within one or two questions. These are single runs; the 95% binomial interval is about
-±4 points at n = 470.
+LoCoMo reproduces to within 0.7 points under the paper's judge, and LongMemEval<sub>S</sub> to
+within 0.1 and 1.7 points. Before the fix the adapter dropped `question_date`, so questions such
+as "how many days ago…" could not be anchored, and the scores were 68.9 / 70.2 (temporal 45.7 /
+54.3). The bound is set at the end of the question's day because 70 evidence sessions in
+LongMemEval<sub>S</sub> are timestamped later on the same day as their question. A strict bound at
+the question's exact time hides that evidence and scores 68.5 / 72.3; the end-of-day bound was chosen
+after seeing that result. These are single
+runs; the 95% binomial interval is about ±4 points at n = 470, and preference (n = 30) moves
+about 3 points per question.
 
 The re-run at `ffed8c5` predates the flags above, so category 5 was dropped outside the harness
 and the `mem0` scores come from re-judging the same answers. With this version of the harness

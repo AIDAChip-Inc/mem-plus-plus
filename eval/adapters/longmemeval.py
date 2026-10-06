@@ -8,7 +8,9 @@ session-scoped.
 Per-instance fields: ``question_id`` (``_abs`` suffix → abstention),
 ``question_type``, ``question``, ``answer``, ``haystack_sessions`` (list of
 sessions, each a list of ``{role, content, has_answer}`` turns),
-``haystack_session_ids``, ``haystack_dates``, ``answer_session_ids``.
+``haystack_session_ids``, ``haystack_dates``, ``answer_session_ids``,
+``question_date`` (the "today" the question is asked on; carried as
+``QAItem.question_date`` so recall is bounded by it and the answerer knows it).
 
 Turn provenance id = ``<session_id>:<turn_index>``. Gold evidence = every turn
 in an answer session that is flagged ``has_answer`` (falls back to all turns of
@@ -76,6 +78,7 @@ def _to_conversation(item: dict, idx: int) -> Conversation:
         category=str(item.get("question_type", "unknown")).replace("-", "_"),
         gold_turn_ids=gold_turn_ids,
         abstention=abstention,
+        question_date=_parse_dt(item.get("question_date")),
     )]
     return Conversation(conversation_id=f"lme_{qid}", turns=turns, qa=qa)
 
