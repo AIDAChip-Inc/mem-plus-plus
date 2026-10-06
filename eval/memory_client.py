@@ -23,6 +23,7 @@ import importlib
 import re
 from collections import Counter
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any, Protocol
 
 _ENGINE_IMPORT_PATH = "memory.recall"
@@ -54,10 +55,11 @@ def live_recall_params() -> dict:
 class MemoryBackend(Protocol):
     """The surface the harness codes against (real engine or stub)."""
 
-    def store_facts_verbatim(self, persona: str, facts: Sequence[str]) -> dict: ...
+    def store_facts_verbatim(self, persona: str, facts: Sequence[str | dict]) -> dict: ...
     def store_facts(self, persona: str, content: str, mode: str = "auto") -> dict: ...
     def recall_facts(
-        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True
+        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True,
+        occurred_before: datetime | None = None,
     ) -> list[dict]: ...
     def count_facts(self, persona: str) -> int: ...
 
@@ -74,19 +76,22 @@ class MemoryClient:
             self._engine = importlib.import_module(self._import_path)
         return self._engine
 
-    def store_facts_verbatim(self, persona: str, facts: Sequence[str]) -> dict:
+    def store_facts_verbatim(self, persona: str, facts: Sequence[str | dict]) -> dict:
         return self._load().store_facts_verbatim(persona, list(facts))
 
     def store_facts(self, persona: str, content: str, mode: str = "auto") -> dict:
         return self._load().store_facts(persona, content, mode=mode)
 
     def recall_facts(
-        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True
+        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True,
+        occurred_before: datetime | None = None,
     ) -> list[dict]:
         """``update_hits=False`` is a read-only recall — no hit-count/salience
         mutation — so an eval that snapshots recall twice (e.g. the consolidation
-        BEFORE/AFTER sweep) does not perturb ranking between the two passes."""
-        return self._load().recall_facts(persona, query, k=k, update_hits=update_hits)
+        BEFORE/AFTER sweep) does not perturb ranking between the two passes.
+        ``occurred_before`` is the as-of bound (``occurred_at <= θ``)."""
+        return self._load().recall_facts(persona, query, k=k, update_hits=update_hits,
+                                         occurred_before=occurred_before)
 
     def count_facts(self, persona: str) -> int:
         """Cheap scope-filtered existence COUNT — the reuse-ingest detector.
@@ -133,10 +138,21 @@ class StubMemoryClient:
 
     def __init__(self):
         self._store: dict[str, list[str]] = {}
+        # fact text -> occurred_at, for facts stored in dict form with a date.
+        self._dates: dict[str, dict[str, datetime]] = {}
 
-    def store_facts_verbatim(self, persona: str, facts: Sequence[str]) -> dict:
+    def store_facts_verbatim(self, persona: str, facts: Sequence[str | dict]) -> dict:
         bucket = self._store.setdefault(persona, [])
-        bucket.extend(facts)
+        dates = self._dates.setdefault(persona, {})
+        for fact in facts:
+            if isinstance(fact, dict):
+                text = str(fact.get("summary") or "")
+                occ = fact.get("occurred_at")
+                if occ is not None:
+                    dates[text] = occ if isinstance(occ, datetime) else datetime.fromisoformat(occ)
+                bucket.append(text)
+            else:
+                bucket.append(fact)
         return {"stored": len(facts)}
 
     def store_facts(self, persona: str, content: str, mode: str = "auto") -> dict:
@@ -149,12 +165,19 @@ class StubMemoryClient:
         return len(self._store.get(persona, []))
 
     def recall_facts(
-        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True
+        self, persona: str, query: str, k: int = DEFAULT_K, update_hits: bool = True,
+        occurred_before: datetime | None = None,
     ) -> list[dict]:
         # update_hits is accepted for protocol parity; the stub keeps no hit state.
+        # occurred_before mirrors the engine: undated facts fail the bound.
         q = Counter(_WORD.findall(query.lower()))
+        dates = self._dates.get(persona, {})
         scored: list[tuple[float, str]] = []
         for fact in self._store.get(persona, []):
+            if occurred_before is not None and not (
+                fact in dates and dates[fact] <= occurred_before
+            ):
+                continue
             f = Counter(_WORD.findall(fact.lower()))
             inter = sum((q & f).values())
             union = sum((q | f).values()) or 1

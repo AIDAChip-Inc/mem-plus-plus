@@ -52,3 +52,17 @@ def test_store_facts_verbatim_datetime_tuple_is_the_working_form(sqlite_public_a
     assert res["written"] == 1
     rows = recall.recall_facts("p", "working fact", k=5)
     assert rows[0]["occurred_at"] == "2026-07-20"
+
+
+def test_recall_facts_as_of_bound_reaches_only_dated_rows(sqlite_public_api):
+    # What eval/harness.py stores for a LongMemEval question with a question_date:
+    # dict facts whose occurred_at is the session's ISO datetime.
+    recall.store_facts_verbatim("p", [
+        {"summary": "[2023-05-20] user: adopted a cat", "occurred_at": "2023-05-20T02:21:00+00:00"},
+        {"summary": "[2023-06-05] user: adopted a dog", "occurred_at": "2023-06-05T10:00:00+00:00"},
+        "[?] user: adopted a bird",  # undated: fails the as-of condition
+    ])
+    theta = datetime(2023, 5, 30, 23, 40, tzinfo=UTC)
+    rows = recall.recall_facts("p", "adopted", k=10, occurred_before=theta)
+    assert [r["summary"] for r in rows] == ["[2023-05-20] user: adopted a cat"]
+    assert len(recall.recall_facts("p", "adopted", k=10)) == 3  # no bound: all rows

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from datetime import datetime
 from typing import NamedTuple
 
 ANSWER_MODEL = "claude-haiku-4-5-20251001"
@@ -156,8 +157,20 @@ class LLMReply(NamedTuple):
     output_tokens: int = 0
 
 
-def build_answer_prompt(*, context: str, question: str) -> str:
-    return ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+def build_answer_prompt(
+    *, context: str, question: str, question_date: datetime | None = None
+) -> str:
+    """Render the answer prompt. With ``question_date`` (LongMemEval's
+    ``question_date``) a ``Current Date:`` line goes right above the question,
+    as in LongMemEval's own reading prompt, so relative-time questions ("how many
+    days ago...") can be anchored. It uses the same ISO form as the evidence
+    stamps. Without it the prompt is byte-identical to before."""
+    prompt = ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+    if question_date is None:
+        return prompt
+    marker = f"Question: {question}"
+    return prompt.replace(
+        marker, f"Current Date: {question_date.isoformat()}\n{marker}", 1)
 
 
 def make_answer_fn(

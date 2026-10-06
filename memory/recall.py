@@ -94,20 +94,30 @@ def _materialize(mems: list[AgentMemory]) -> list[dict]:
     return rows
 
 
-def recall_facts(persona: str, query: str, k: int = 24, update_hits: bool = True) -> list[dict]:
+def recall_facts(
+    persona: str,
+    query: str,
+    k: int = 24,
+    update_hits: bool = True,
+    occurred_before: datetime | None = None,
+) -> list[dict]:
     """Scope-filtered, salience-ranked recall -> plain dicts (session-safe).
 
     OWN is this human's personal recall (per-human user_id + this persona's
     agent_type). TEAM is the project pool — every human/persona on the project
     EXCEPT the caller's own scope. OWN renders first, TEAM appended; each row
     carries its own ``by:<slug>`` tag so a teammate's fact is distinguishable.
+
+    ``occurred_before`` is the as-of date θ: only rows with ``occurred_at <= θ``
+    are eligible, applied before ranking. Rows with no ``occurred_at`` fail it.
     """
     uid, pid, cid, _slug = _scope()
     db = get_session()
     try:
         store = PostgresMemoryStore(db)
         own, own_plan, team, team_plan = store.recall_project_sections(
-            user_id=uid, agent_type=persona, project_id=pid, customer_id=cid, query=query, k=k
+            user_id=uid, agent_type=persona, project_id=pid, customer_id=cid, query=query, k=k,
+            occurred_before=occurred_before,
         )
         mems = own + team
         if update_hits and (own_plan or team_plan):

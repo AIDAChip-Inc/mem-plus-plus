@@ -38,6 +38,10 @@ class QAItem:
     category: str
     gold_turn_ids: set[str] = field(default_factory=set)
     abstention: bool = False
+    # "Today" for the question (LongMemEval ``question_date``). When set, the
+    # harness bounds recall to rows with ``occurred_at <= question_date`` and
+    # gives the answerer this date as the current date. ``None`` = undated.
+    question_date: datetime | None = None
 
     @property
     def primary_gold(self) -> str:
