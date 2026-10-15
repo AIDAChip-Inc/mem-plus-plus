@@ -232,6 +232,22 @@ class MemoryTagLink(Base):
     )
 
 
+class MemoryAPIRequest(Base):
+    """Atomic API-ingest receipt, committed alongside its source records.
+
+    The ID hashes the external scope and request ID; the digest detects reuse
+    with changed payloads. No external identifiers or source text are stored.
+    """
+
+    __tablename__ = "memory_api_request"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class MemoryConsolidationRun(Base):
     """Durable ledger for a synthesize-merge consolidation pass — faithful replica
     of production ``app/models/memory.py`` ``MemoryConsolidationRun``.
