@@ -307,6 +307,13 @@ First startup downloads the pinned ONNX model from Hugging Face. Allow outbound
 access and mount a persistent cache at `/home/mempp/.cache/huggingface` to reuse
 the model across disposable containers.
 
+### MemoryArena evaluation adapter
+
+The [MemoryArena integration guide](integrations/memoryarena/README.md) documents
+authenticated initialization, source ingestion, and prompt wrapping for agent
+tasks, including web search. This prepares a local backend; no MemoryArena score
+or accepted inclusion is claimed.
+
 ### Gradio demo
 
 The Gradio demo runs the engine end to end on your machine.

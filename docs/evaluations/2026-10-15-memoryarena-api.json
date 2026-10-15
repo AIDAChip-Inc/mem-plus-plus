@@ -1,0 +1,33 @@
+{
+  "result": "passed",
+  "transport": "actual upstream MemoryArena MemoryClient over loopback HTTP",
+  "client_source": {
+    "repository": "ZexueHe/MemoryArena",
+    "client_blob_sha": "8191f23fc379e0c89a8d21be0e62dacaf7a5a273",
+    "client_path": "memory/client.py",
+    "checked": "2026-10-15"
+  },
+  "auth": [
+    "requests.Session hook",
+    "provided auth patch applied with git apply --check and exercised"
+  ],
+  "database": "PostgreSQL17+pgvector, UTF8, migration0003, dedicated database",
+  "embeddings": "real local ONNX all-MiniLM-L6-v2 384d",
+  "checks": [
+    "401 without token",
+    "empty initialized world",
+    "concurrent identical retries",
+    "reinitialization preserves history",
+    "cross-session sharing",
+    "foreign task exclusion",
+    "stable evidence IDs",
+    "source escaping and Unicode",
+    "auth patch contract",
+    "exact chunk retry deduplicated"
+  ],
+  "source_records": 3,
+  "vectors": 3,
+  "receipts": 3,
+  "paid_model_calls": 0,
+  "claim_limit": "Integration validation only; no full search-agent run, answer-accuracy score, or venue acceptance claimed"
+}

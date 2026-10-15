@@ -76,6 +76,8 @@ def _identity(user_id: str):
 
 
 class AMLService:
+    paths = {"/add", "/search"}
+
     def __init__(self, sessions, token: str):
         if len(token) < 32 or any(not (33 <= ord(c) <= 126) for c in token):
             raise ValueError("MEMORY_API_TOKEN must be at least 32 printable ASCII characters without whitespace")
@@ -160,6 +162,14 @@ class AMLService:
                                  "created_at": when.isoformat()})
         return {"data": evidence}
 
+    def dispatch(self, path: str, raw: bytes) -> dict:
+        model = AddRequest if path == "/add" else SearchRequest
+        try:
+            request = model.model_validate_json(raw)
+        except ValidationError:
+            raise APIError(422, "invalid request fields") from None
+        return self.add(request) if path == "/add" else self.search(request)
+
     def __call__(self, environ, start_response):
         try:
             path, method = environ.get("PATH_INFO", ""), environ.get("REQUEST_METHOD", "")
@@ -171,7 +181,7 @@ class AMLService:
                 supplied = environ.get("HTTP_AUTHORIZATION", "").encode("utf-8")
                 if not hmac.compare_digest(supplied, self.authorization):
                     raise APIError(401, "unauthorized")
-                if path not in {"/add", "/search"}:
+                if path not in self.paths:
                     raise APIError(404, "not found")
                 if method != "POST":
                     raise APIError(405, "POST required")
@@ -186,13 +196,7 @@ class AMLService:
                 raw = environ["wsgi.input"].read(length)
                 if len(raw) != length:
                     raise APIError(400, "incomplete request body")
-                model = AddRequest if path == "/add" else SearchRequest
-                try:
-                    request = model.model_validate_json(raw)
-                except ValidationError:
-                    # Do not return validation dumps containing submitted text.
-                    raise APIError(422, "invalid request fields") from None
-                payload = self.add(request) if path == "/add" else self.search(request)
+                payload = self.dispatch(path, raw)
             status = 200
         except APIError as exc:
             status, payload = exc.status, {"detail": exc.message}
@@ -220,12 +224,12 @@ class _Handler(WSGIRequestHandler):
         pass  # evaluation payloads/URLs are not access-logged
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv=None, *, service_factory=AMLService, default_port=8787, description=__doc__):
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8787)
+    parser.add_argument("--port", type=int, default=default_port)
     args = parser.parse_args(argv)
-    service = AMLService(get_session, os.environ.get("MEMORY_API_TOKEN", ""))
+    service = service_factory(get_session, os.environ.get("MEMORY_API_TOKEN", ""))
     if get_engine().dialect.name != "postgresql":
         raise RuntimeError("AML service requires migrated PostgreSQL + pgvector")
     if config.MEMORY_EMBEDDING_BACKEND != "onnx" or not config.MEMORY_EMBEDDINGS_ENABLED:
@@ -240,7 +244,7 @@ def main(argv=None):
         db.query(MemoryAPIRequest.id).limit(1).all()  # verify migration before serving
     with make_server(args.host, args.port, service, server_class=_Server,
                      handler_class=_Handler) as server:
-        print(f"Mem++ Textual Add/Search listening on {args.host}:{args.port}", flush=True)
+        print(f"{type(service).__name__} listening on {args.host}:{args.port}", flush=True)
         server.serve_forever()
 
 
