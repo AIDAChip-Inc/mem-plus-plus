@@ -53,6 +53,28 @@ def test_subset_datasets_allowed():
         assert len(archive.namelist()) == 2
 
 
+@pytest.mark.parametrize("name", ["HelloBench-Creative&Design",
+                                  "WritingBench-Academic&Engineering",
+                                  "WritingBench-Politics&Law"])
+def test_official_ampersand_names_roundtrip(name):
+    spec = manifest()
+    spec["datasets"] = {name: {"test_indices": [129, 189]}}
+    rows = [{**row, "dataset": name} for row in responses()]
+    payload = package.make_package(spec, rows)
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        assert archive.namelist() == [f"dataset/{name}/predict.json"]
+        uploaded = json.loads(archive.read(archive.namelist()[0]))
+    assert all(row["dataset"] == name for row in uploaded)
+    assert [row["response"] for row in uploaded] == [rows[1]["response"], rows[0]["response"]]
+
+
+@pytest.mark.parametrize("name", ["../Locomo-0", "HelloBench&../other", "A/B", "A\\B",
+                                  "A%2fB", "A?B", "A#B", "A B", "A\nB", "&A"])
+def test_dataset_name_rejects_path_and_url_syntax(name):
+    with pytest.raises(ValueError):
+        package.dataset_name(name)
+
+
 @pytest.mark.parametrize("value", ['[{"response":NaN}]', '{"x":1,"x":2}'])
 def test_strict_json(tmp_path, value):
     path = tmp_path / "input.json"

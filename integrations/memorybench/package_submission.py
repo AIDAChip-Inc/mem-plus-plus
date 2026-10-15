@@ -19,7 +19,9 @@ REPO = "THUIR/MemoryBench"
 
 
 def dataset_name(value):
-    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", value):
+    # Official names include e.g. HelloBench-Creative&Design. Keep the
+    # literal name in HF paths and ZIP entries while rejecting path syntax.
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_&-]*", value):
         raise ValueError("Unsafe or unsupported dataset name")
     return value
 
