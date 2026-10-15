@@ -247,6 +247,66 @@ language model labels each group as a **conflict** (the older version is marked 
 
 # Demo
 
+### Textual evaluation API (AML preparation)
+
+`python -m memory.aml_api` serves `GET /health`, `POST /add`, and `POST /search`
+using the [AML Textual Add/Search contract](https://agentmemories.ai/api-guide).
+This is an evaluation adapter, not an AML registration or a verified leaderboard result.
+The organizer's interpretation of LLM-free ingestion is still pending.
+
+Use a **dedicated evaluation database** with PostgreSQL/pgvector and the local
+384-dimensional ONNX model. Set `MEMORY_DATABASE_URL` and a dedicated
+`MEMORY_API_TOKEN` (at least 32 printable ASCII characters, no whitespace) through your
+environment or secret manager, then run:
+
+```bash
+uv sync
+uv run alembic upgrade head
+uv run python -m memory.aml_api --host 127.0.0.1 --port 8787
+```
+
+Add and Search require `Authorization: Bearer <MEMORY_API_TOKEN>`; Health is
+unauthenticated. Put a TLS reverse proxy in front of the service for remote
+evaluation. Keep the database private and separate from the demo, manual reset,
+and consolidation experiments. The adapter exposes no deletion or administration API.
+
+Each platform `user_id` selects an independent memory world. Sessions and source
+contributors in that world share records; unrelated worlds and the demo project
+cannot be recalled. Ingestion preserves each message with its role and event
+timestamp, makes no extraction/answering calls, and commits the complete chunk and
+its retry receipt atomically. Identical retries return success without adding rows;
+reusing a request ID with changed content returns 409. Missing write embeddings
+abort the chunk with 503. Concurrent distinct uploads into the same world may
+return a transient 409 while creating canonical tags; retry the identical request.
+A changed-payload 409 requires a new request ID instead. Search returns stable evidence IDs and dated source text,
+honors `top_k` up to 100, and does not update hit counts or generate answers.
+Search uses the engine's existing retrieval/fallback behavior. Multiple-choice
+`options` are accepted but are not used to alter the retrieval query.
+
+The service refuses to start with OpenAI embeddings or embeddings disabled; this
+profile uses no paid inference API. Configure capacity, HTTPS, and platform access
+before requesting an AML smoke/full run. Follow the venue's data-retention rules
+for both source records and retry receipts; do not retain evaluation data beyond
+the allowed period.
+
+An optional container definition is provided (image build not yet verified):
+
+```bash
+docker build -f Dockerfile.aml -t mempp-aml .
+# Run migrations against the dedicated database before starting the API:
+docker run --rm --env MEMORY_DATABASE_URL mempp-aml python -m alembic upgrade head
+docker run --rm -p 127.0.0.1:8787:8787 --env MEMORY_DATABASE_URL --env MEMORY_API_TOKEN mempp-aml
+```
+
+The container copies only the engine, migrations, and package metadata, runs as
+an unprivileged user, and installs dependencies from `uv.lock`. Its database must
+be reachable from the container; a host-only Unix socket DSN is not portable.
+First startup downloads the pinned ONNX model from Hugging Face. Allow outbound
+access and mount a persistent cache at `/home/mempp/.cache/huggingface` to reuse
+the model across disposable containers.
+
+### Gradio demo
+
 The Gradio demo runs the engine end to end on your machine.
 
 ```bash
