@@ -462,7 +462,19 @@ The paper's results are summarized in the next section.
 
 # Results
 
-All numbers in this section, except [Independent reproduction](#independent-reproduction), are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4). Scores are LLM-judge scores from a `gpt-4o-mini` judge on a 0 to 100 scale. Within each answerer block, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+The dated official-harness run below is separate from the historical paper evaluation. The original benchmark tables that follow, except [Independent reproduction](#independent-reproduction), are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4), using a `gpt-4o-mini` judge on a 0 to 100 scale. Within those answerer blocks, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+
+### OrgMemBench official-harness run — 2026-10-15
+
+New self-run results using the unchanged upstream neutral answerer and judge, both `claude-sonnet-4-6`, with local ONNX MiniLM-384 embeddings and PostgreSQL/pgvector:
+
+| Tier | Artifacts | Questions | Mean rubric score (0–100) |
+|:---|---:|---:|---:|
+| Small | 126 | 11 | **64.96** |
+| Medium | 443 | 73 | **55.67** |
+
+These are weighted partial-credit scores, not percentages of fully correct answers. Single runs; no confidence intervals. They are not a leaderboard ranking and use a different judge from the paper tables below. See the [full protocol, all metrics, raw answers/judgments and audit](docs/evaluations/2026-10-15-orgmembench/README.md).
+
 
 ### OrgMemBench
 
