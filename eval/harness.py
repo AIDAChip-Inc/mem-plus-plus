@@ -3,8 +3,8 @@
 Given a list of ``Conversation``s (from any adapter) and a memory backend
 (real engine wrapper or stub), for each conversation:
 
-  1. INGEST every turn verbatim into a conversation-scoped persona (isolation
-     between conversations; no-leakage — QA is never shown to ingestion).
+  1. INGEST every turn verbatim into an example-scoped project and persona.
+     Project sharing stays enabled within the example; QA is never ingested.
   2. For each question: recall top-k, map recalled facts back to turn ids for
      retrieval scoring, build a context, generate an answer, judge it.
   3. Score retrieval (recall@k/MRR/nDCG@k, only where gold evidence exists),
@@ -43,7 +43,7 @@ from .llm import (
     build_answer_prompt,
     resolve_model,
 )
-from .memory_client import DEFAULT_K, live_recall_params
+from .memory_client import DEFAULT_K, evaluation_scope, live_recall_params
 from .sysinfo import describe_machine
 from .token_counter import TokenCounter
 
@@ -502,12 +502,13 @@ def run_benchmark(
             progress_cb(_done, total_questions)
 
     def _work(conv: Conversation) -> tuple[list[QAResult], int, bool]:
-        return _run_conversation(
-            conv, memory, answer_fn=answer_fn, judge_fn=judge_fn,
-            k=k, recall_only=recall_only, persona=persona,
-            reuse_ingest=reuse_ingest, update_hits=update_hits, on_question=_tick,
-            token_counter=counter, judge_prompt=resolved_judge_prompt,
-        )
+        with evaluation_scope(memory, benchmark, conv.conversation_id):
+            return _run_conversation(
+                conv, memory, answer_fn=answer_fn, judge_fn=judge_fn,
+                k=k, recall_only=recall_only, persona=persona,
+                reuse_ingest=reuse_ingest, update_hits=update_hits, on_question=_tick,
+                token_counter=counter, judge_prompt=resolved_judge_prompt,
+            )
 
     try:
         if resolved_workers == 1 or len(conversations) <= 1:
@@ -570,6 +571,7 @@ def run_benchmark(
         # (MEMORY_RRF_W_*, MEMORY_CANDIDATE_LIMIT, MEMORY_LEXICAL_OR) are recorded
         # as actually used. Not meaningful for backend=stub.
         "recall_params": live_recall_params(),
+        "memory_scope_policy": getattr(memory, "scope_policy", "backend-defined"),
         # Which questions were scored: the filter applied (if any) and n.
         "question_filter": question_filter,
         "sample_fraction": sample_fraction,

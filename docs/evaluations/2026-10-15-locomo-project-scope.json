@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-15",
+  "source_commit": "a7680491ae09d46aa0b19e98e29b08ff00cc40bd",
+  "purpose": "Retrieval execution and project-boundary validation; not answer accuracy and not a reproduction of the OpenAI-embedding paper scores.",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "embedding_model": "all-MiniLM-L6-v2, local ONNX 384 dimensions",
+  "retrieval_metrics": {
+    "recall_at_k": 0.7671,
+    "mrr": 0.3985,
+    "ndcg_at_k": 0.4635
+  },
+  "scope_audit": {
+    "queries_checked": 1540,
+    "returned_records_checked": 77000,
+    "foreign_project_records": 0,
+    "projects": [
+      "146380c9-e79d-51ec-b9ee-5f48e3f0cab5",
+      "34ecca1d-2a3f-598b-b131-d3be44964939",
+      "35cc7e52-a635-5967-9bea-33d4edd9b845",
+      "548764f6-e162-57dc-94ee-05905615179a",
+      "54b89ad5-657f-54db-b8dc-48367232b580",
+      "77d60dd1-1d2e-5905-8c4f-a2e7036bab75",
+      "7ac8fb6a-a14e-54c5-94a4-f11d6438e504",
+      "88f5ac9c-5b51-5e21-846c-1ea89b4a8843",
+      "c1e38879-d360-528b-9d62-01d3726a7982",
+      "f889416b-1a91-5173-850f-fecb2454aa5a"
+    ],
+    "foreign_customer_records": 0,
+    "record_count_unit": "retrieval appearances, not distinct stored records"
+  },
+  "repeat_check": "All 1,540 retrieved-turn-ID lists and aggregate retrieval metrics matched when reusing the same ingested database; no claim of fresh re-ingest determinism.",
+  "tests": {
+    "passed": 243,
+    "skipped": 1,
+    "deselected": 1,
+    "scope_suite_repeated": {
+      "passed_each_run": 12,
+      "runs": 2
+    },
+    "deselection_reason": "-m not embedder excludes the real-model consolidation test; the LoCoMo validation separately used real ONNX embeddings.",
+    "deselected_test": "eval/tests/test_consolidation_eval.py::test_real_engine_sweep_is_judge_free_recall_lossless"
+  },
+  "model_inference_api_calls": 0,
+  "limitations": [
+    "No answer model or judge was called.",
+    "PostgreSQL indexes and real local embeddings were used; this does not establish historical evaluation isolation or historical score impact.",
+    "Some tests use deterministic embedding fixtures; the LoCoMo runs used the actual ONNX embedding service."
+  ],
+  "first_run_config": {
+    "benchmark": "locomo",
+    "backend": "engine",
+    "k": 50,
+    "recall_only": true,
+    "recall_params": {
+      "rrf_k": 60,
+      "weights": [
+        1.0,
+        1.0,
+        2.0
+      ],
+      "weights_order": [
+        "fuzzy",
+        "tag",
+        "vector"
+      ],
+      "candidate_limit": 200,
+      "lexical_or": true,
+      "half_life_days": 7.0,
+      "project_memory_enabled": true
+    },
+    "memory_scope_policy": "per-benchmark-example-project-v1",
+    "question_filter": {
+      "exclude": "adversarial",
+      "n_questions_before": 1986,
+      "n_excluded": 446,
+      "n_questions_after": 1540
+    },
+    "sample_fraction": 1.0,
+    "sample_seed": null,
+    "workers": 2,
+    "reuse_ingest": false,
+    "update_hits": false,
+    "n_questions_dated": 0,
+    "n_conversations_reused": 0,
+    "n_conversations_ingested": 10,
+    "n_conversations": 10,
+    "n_questions": 1540
+  },
+  "audit_run_config": {
+    "reuse_ingest": true,
+    "workers": 2,
+    "k": 50,
+    "recall_only": true,
+    "count_tokens": false,
+    "same_database_as_first_run": true
+  }
+}

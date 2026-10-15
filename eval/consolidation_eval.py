@@ -46,7 +46,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from . import metrics
-from .memory_client import DEFAULT_K, MemoryClient
+from .memory_client import DEFAULT_K, MemoryClient, evaluation_scope
 
 # ── Sweep protocol constants ─────────────────────────────────────────────────────
 DEFAULT_TAUS: tuple[float, ...] = (0.80, 0.85, 0.90, 0.95)
@@ -360,14 +360,14 @@ def run_consolidation_eval(
 
     per_tau: list[dict] = []
     for tau in taus:
-        runs = [
-            evaluate_tau(
-                memory, consolidate_fn,
-                persona=f"{persona_base}__t{tau}__r{run}",
-                corpus=corpus, queries=corpus.queries, k=k, tau=tau,
-            )
-            for run in range(n_runs)
-        ]
+        runs = []
+        for run in range(n_runs):
+            persona = f"{persona_base}__t{tau}__r{run}"
+            with evaluation_scope(memory, "consolidation_quality", persona):
+                runs.append(evaluate_tau(
+                    memory, consolidate_fn, persona=persona,
+                    corpus=corpus, queries=corpus.queries, k=k, tau=tau,
+                ))
         per_tau.append(_aggregate_tau(tau, runs))
 
     config = {

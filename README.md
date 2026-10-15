@@ -358,6 +358,15 @@ uv run python -m eval.run_locomo --k 50 \
 | `--exclude-adversarial` / `--no-exclude-adversarial` | LoCoMo only. Drop the 446 category-5 (adversarial) questions. On by default, giving the paper's 1,540. |
 | `--exclude-abstention` / `--no-exclude-abstention` | LongMemEval only. Drop the 30 abstention (`_abs`) questions. On by default, giving the paper's 470. |
 
+**Evaluation scope.** The engine-backed harness assigns each `(benchmark, conversation_id)`
+pair a stable project scope. All authors, agents, and sessions belonging to that example
+share the project normally; unrelated examples cannot contribute team memories. The demo's
+default shared project and the organizational-memory feature flag are unchanged. Results
+record `memory_scope_policy` and `recall_params.project_memory_enabled`. Stable IDs support
+`--reuse-ingest`; use a fresh database or a distinct benchmark namespace when changing the
+underlying corpus or comparing ingestion variants. Earlier published runs do not record
+this scope policy, so their isolation settings cannot be established from the README alone.
+
 `eval.run_longmemeval`, `eval.run_longbench` and `eval.run_membench` take the same flags,
 except that each question filter exists only for its own benchmark.
 

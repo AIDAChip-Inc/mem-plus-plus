@@ -20,7 +20,10 @@ harness dry-run uses ``StubMemoryClient`` and never touches the engine.
 from __future__ import annotations
 
 import importlib
+import json
 import re
+import uuid
+from contextlib import nullcontext
 from collections import Counter
 from collections.abc import Sequence
 from datetime import datetime
@@ -49,6 +52,7 @@ def live_recall_params() -> dict:
         "candidate_limit": cfg.CANDIDATE_LIMIT,
         "lexical_or": cfg.MEMORY_LEXICAL_OR,
         "half_life_days": cfg.RECENCY_HALF_LIFE_DAYS,
+        "project_memory_enabled": cfg.MEMORY_PROJECT_ENABLED,
     }
 
 
@@ -64,12 +68,31 @@ class MemoryBackend(Protocol):
     def count_facts(self, persona: str) -> int: ...
 
 
+def evaluation_scope(memory, benchmark: str, example_id: str):
+    """Use a backend's explicit example boundary, if it exposes one."""
+    factory = getattr(memory, "example_scope", None)
+    return factory(benchmark, example_id) if factory is not None else nullcontext()
+
+
 class MemoryClient:
     """Adapter over the real engine module. Imported lazily on first use."""
 
     def __init__(self, import_path: str = _ENGINE_IMPORT_PATH):
         self._import_path = import_path
         self._engine: Any = None
+
+    scope_policy = "per-benchmark-example-project-v1"
+
+    def example_scope(self, benchmark: str, example_id: str):
+        """Each independent benchmark world is a project, with sharing intact.
+
+        Stable IDs allow reuse-ingest in the same benchmark/example. JSON array
+        encoding avoids delimiter collisions. No environment/global flag changes.
+        """
+        ns = uuid.uuid5(uuid.NAMESPACE_DNS, "eval.memory-research.aidachip.com")
+        customer = uuid.uuid5(ns, json.dumps([benchmark]))
+        project = uuid.uuid5(ns, json.dumps([benchmark, example_id]))
+        return self._load().project_scope(project_id=project, customer_id=customer)
 
     def _load(self) -> Any:
         if self._engine is None:
