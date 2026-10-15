@@ -24,6 +24,8 @@ import getpass
 import logging
 import os
 import uuid
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, date, datetime
 
 from memory import config
@@ -42,6 +44,24 @@ logger = logging.getLogger(__name__)
 
 _NS = uuid.uuid5(uuid.NAMESPACE_DNS, "memory-research.aidachip.com")
 _BY_PREFIX = "by:"
+_PROJECT_SCOPE: ContextVar[tuple[uuid.UUID, uuid.UUID] | None] = ContextVar(
+    "memory_project_scope", default=None
+)
+
+
+@contextmanager
+def project_scope(*, project_id: uuid.UUID, customer_id: uuid.UUID):
+    """Select an explicit project for this execution context.
+
+    Contributor identity and normal own/team sharing are preserved. This is a
+    scope selector, not authentication. ContextVar keeps concurrent callers and
+    nested scopes independent; callers outside this context keep demo defaults.
+    """
+    token = _PROJECT_SCOPE.set((project_id, customer_id))
+    try:
+        yield
+    finally:
+        _PROJECT_SCOPE.reset(token)
 
 
 def _contributor_slug() -> str:
@@ -63,6 +83,8 @@ def _scope() -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, str]:
     uid = uuid.uuid5(_NS, f"user:{slug}")
     pid = uuid.uuid5(_NS, "project:memory-research")
     cid = uuid.uuid5(_NS, "customer:memory-research")
+    if (scope := _PROJECT_SCOPE.get()) is not None:
+        pid, cid = scope
     return uid, pid, cid, slug
 
 
