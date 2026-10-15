@@ -24,6 +24,8 @@
   <a href="#citation">Citation</a>
   ·
   <a href="SECURITY.md">Security</a>
+  ·
+  <a href="llms.txt">Agent documentation index</a>
 </p>
 
 <p align="center">
