@@ -35,7 +35,7 @@
   },
   "extension_paid_calls": 1739,
   "extension_actual_usd": 259.265091,
-  "status": "Generation and provenance audits complete; initial full upload rejected server size-limit; lossless transport candidate pending",
+  "status": "Generation and provenance audits complete; both full upload attempts rejected server size-limit; awaiting server resolution",
   "model": "claude-sonnet-4-6",
   "data_revision": "3acd60a4bd35b43b408f0e6db4c5f1e88df5e96d",
   "protocol": "28 independent native SINGLE-dataset off-policy experiments; not seven pooled native CLI experiments",
@@ -375,5 +375,12 @@
   "initial_rejected_zip_sha256": "ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3",
   "compression": "ZIP BZIP2",
   "initial_upload_error": "Upload exceeds the server size limit.",
-  "accepted_full_submission": false
+  "accepted_full_submission": false,
+  "full_upload_attempts": 2,
+  "transport_upload_error": "Upload exceeds the server size limit.",
+  "transport_zip_bytes": 1686428,
+  "initial_zip_bytes": 2195145,
+  "published_upload_max_bytes": 524288000,
+  "actual_server_upload_limit": null,
+  "empty_response_backend_acceptance": null
 }
