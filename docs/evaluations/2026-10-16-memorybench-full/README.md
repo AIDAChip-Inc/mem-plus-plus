@@ -1,6 +1,6 @@
 # MemoryBench full coverage — 2026-10-16
 
-Local generation completed for **819 official test items across 28 datasets**. This is coverage and provenance evidence, not a new accuracy score. The full archive has not been submitted or evaluated by the organizer at this snapshot; no public rank is established.
+Local generation completed for **819 official test items across 28 datasets**. This is coverage and provenance evidence, not a new accuracy score. The initial full archive upload was rejected with “Upload exceeds the server size limit.” Its 2,195,145 bytes were below the published 524,288,000-byte limit. No receipt, accepted full submission, organizer score or public rank is established. A lossless BZIP2 ZIP candidate reduces transport size to 1,686,428 bytes while preserving every prediction-file byte; its backend acceptance remains unverified.
 
 The run preserves the original 50 evaluated LoCoMo outputs and adds 769 outputs. The existing 50-item native local F1 (0.3950822) and organizer email average (0.6560) apply only to that original subset; neither is a full-suite result. [Original subset evidence](../2026-10-15-memorybench-locomo-family/README.md).
 
@@ -20,7 +20,7 @@ All 769 new outputs match their frozen API requests, retrieved contexts and sett
 
 The extension made 1,739 paid calls costing $259.265091, including training, feedback and 769 test calls. The original 596 calls cost $20.552814; 718 free input-token-count calls are separate preparation. The shared budget also covers earlier work and is not a separate budget for each dataset.
 
-Full ZIP SHA-256: `ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3`. Original subset ZIP SHA-256: `bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c`. Machine-readable coverage, limits, output exceptions and audit hashes: [results.json](results.json). Private raw API records and prompts are retained locally.
+Initial rejected DEFLATE ZIP SHA-256: `ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3`. Original subset ZIP SHA-256: `bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c`. Lossless BZIP2 ZIP candidate SHA-256: `0e6d73ccf4fdef303caa4498b5fcbba5ff5fb03ad0f6b75561ac35dbedabf0cc`. Machine-readable coverage, limits, output exceptions and audit hashes: [results.json](results.json). Private raw API records and prompts are retained locally.
 
 ## Exact split counts
 

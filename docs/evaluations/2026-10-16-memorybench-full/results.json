@@ -4,7 +4,7 @@
   "new_outputs": 769,
   "original_outputs": 50,
   "original_zip_sha256": "bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c",
-  "zip_sha256": "ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3",
+  "zip_sha256": "0e6d73ccf4fdef303caa4498b5fcbba5ff5fb03ad0f6b75561ac35dbedabf0cc",
   "maximum_response_chars": 77439,
   "empty_outputs": [
     {
@@ -35,7 +35,7 @@
   },
   "extension_paid_calls": 1739,
   "extension_actual_usd": 259.265091,
-  "status": "Local generation and provenance audits complete; full submission and organizer evaluation pending",
+  "status": "Generation and provenance audits complete; initial full upload rejected server size-limit; lossless transport candidate pending",
   "model": "claude-sonnet-4-6",
   "data_revision": "3acd60a4bd35b43b408f0e6db4c5f1e88df5e96d",
   "protocol": "28 independent native SINGLE-dataset off-policy experiments; not seven pooled native CLI experiments",
@@ -371,5 +371,9 @@
       "foreign_records_in_checked_scope": 0,
       "report_sha256": "72d7084709b9ce82fae66fba7df55b63427d7c05b319fe441e2b1b678a56a009"
     }
-  ]
+  ],
+  "initial_rejected_zip_sha256": "ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3",
+  "compression": "ZIP BZIP2",
+  "initial_upload_error": "Upload exceeds the server size limit.",
+  "accepted_full_submission": false
 }

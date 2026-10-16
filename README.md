@@ -479,7 +479,7 @@ These are weighted partial-credit scores, not percentages of fully correct answe
 
 ### MemoryBench full coverage — 2026-10-16
 
-All **819 official test items across 28 datasets** now have recorded outputs: the original 50 LoCoMo outputs plus 769 new outputs. Claude Sonnet 4.6, local ONNX MiniLM-384 / PostgreSQL retrieval at k=50, and effective per-dataset caps stayed fixed across 28 independent native SINGLE-dataset off-policy experiments. Full organizer evaluation and public ranking remain pending; generation and provenance checks are not an accuracy score. The archive retains 48 capped responses and seven provider refusals, including five empty outputs whose website acceptance is unverified. See [exact split counts, protocol, API evidence and audit summary](docs/evaluations/2026-10-16-memorybench-full/README.md).
+All **819 official test items across 28 datasets** now have recorded outputs: the original 50 LoCoMo outputs plus 769 new outputs. Claude Sonnet 4.6, local ONNX MiniLM-384 / PostgreSQL retrieval at k=50, and effective per-dataset caps stayed fixed across 28 independent native SINGLE-dataset off-policy experiments. The initial full upload was rejected by the website with a server size-limit error; no accepted full submission is established. Full organizer evaluation and public ranking remain pending; generation and provenance checks are not an accuracy score. The archive retains 48 capped responses and seven provider refusals, including five empty outputs whose website acceptance is unverified. See [exact split counts, protocol, API evidence and audit summary](docs/evaluations/2026-10-16-memorybench-full/README.md).
 
 ### MemoryBench LoCoMo-family results — 2026-10-15
 
