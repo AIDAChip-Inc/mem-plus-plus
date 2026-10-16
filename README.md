@@ -462,7 +462,7 @@ The paper's results are summarized in the next section.
 
 # Results
 
-The dated official-harness run below is separate from the historical paper evaluation. The original benchmark tables that follow, except [Independent reproduction](#independent-reproduction), are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4), using a `gpt-4o-mini` judge on a 0 to 100 scale. Within those answerer blocks, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
+The dated self-run evaluations below are separate from the historical paper evaluation. The original benchmark tables that follow, except [Independent reproduction](#independent-reproduction), are **as reported in the [Mem++ paper](https://arxiv.org/abs/2610.02002)** (Tables 1 to 4 and 7, Figure 4), using a `gpt-4o-mini` judge on a 0 to 100 scale. Within those answerer blocks, **bold** marks the best result and <ins>underline</ins> the second best, as in the paper.
 
 ### OrgMemBench official-harness run — 2026-10-15
 
@@ -474,6 +474,16 @@ New self-run results using the unchanged upstream neutral answerer and judge, bo
 | Medium | 443 | 73 | **55.67** |
 
 These are weighted partial-credit scores, not percentages of fully correct answers. Single runs; no confidence intervals. They are not a leaderboard ranking and use a different judge from the paper tables below. See the [full protocol, all metrics, raw answers/judgments and audit](docs/evaluations/2026-10-15-orgmembench/README.md).
+
+
+
+### MemoryBench LoCoMo-family local run — 2026-10-15
+
+| Coverage | Metric | Result | Evaluation status |
+|:---|:---|---:|:---|
+| Locomo-0 through Locomo-9; all 50 official test items | Native local F1 (0–1) | **0.3950822** | Local run; no organizer-issued score or public ranking established |
+
+Ten independent native off-policy experiments used 20 own training dialogs per dataset, Claude Sonnet 4.6 answers, and local ONNX MiniLM-384 / PostgreSQL retrieval at k=50. Settings stayed fixed; no test answers were replaced. This covers the LoCoMo family within MemoryBench, not the full suite or the paper's original LoCoMo protocol. See [protocol, per-dataset results and audit summary](docs/evaluations/2026-10-15-memorybench-locomo-family/README.md).
 
 
 ### OrgMemBench

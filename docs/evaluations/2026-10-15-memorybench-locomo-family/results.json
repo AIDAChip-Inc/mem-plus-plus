@@ -1,0 +1,346 @@
+{
+  "scope": "All 50 official test items across ten LoCoMo datasets in MemoryBench; not the full MemoryBench suite or original LoCoMo paper protocol",
+  "protocol": "Ten independent native off-policy single-dataset experiments; 20 own training dialogs and five test answers each; fixed settings, no test-answer replacement",
+  "training_dialogs": 200,
+  "test_questions": 50,
+  "local_f1_using_native_scorer_50_questions": 0.3950822032278713,
+  "per_dataset": {
+    "Locomo-0": {
+      "questions": 5,
+      "f1": 0.4695652173913043,
+      "run_id": "961939f3-1fd5-40d4-bb02-e01da36f29ff",
+      "api_calls": 57,
+      "actual_usd": 1.746729,
+      "predict_sha256": "233b72afa508379579fa3389299f70fb76b83f5999eebadb09d7f40fed548926"
+    },
+    "Locomo-1": {
+      "questions": 5,
+      "f1": 0.5054945054945055,
+      "run_id": "ae204413-cf1e-4b09-9011-a7236eb8692f",
+      "api_calls": 56,
+      "actual_usd": 1.70244,
+      "predict_sha256": "18fa8dcdd38157532bde373016cbd54b209b2fbe3b297e7127ca4c49a14b57dd"
+    },
+    "Locomo-2": {
+      "questions": 5,
+      "f1": 0.627665544332211,
+      "run_id": "f268d122-b206-46cf-8de3-a62079c2e729",
+      "api_calls": 57,
+      "actual_usd": 1.738737,
+      "predict_sha256": "1a3a8dfc3d7c8fd668aca3e9909667184672d658688eac8a63a9a9eb7e943587"
+    },
+    "Locomo-3": {
+      "questions": 5,
+      "f1": 0.0354844027227513,
+      "run_id": "b875ad5a-9c0c-4b55-98dd-12dadfa112e9",
+      "api_calls": 63,
+      "actual_usd": 1.582395,
+      "predict_sha256": "074f8c65c8649cc310fffc9dfb7d55657903bd11d3b2493349b298d29bc16921"
+    },
+    "Locomo-4": {
+      "questions": 5,
+      "f1": 0.2404040404040404,
+      "run_id": "9cc0503f-4d86-48b5-acd2-517f57c73e76",
+      "api_calls": 63,
+      "actual_usd": 2.41431,
+      "predict_sha256": "05c8bade3670bb7f633040ee00286d9df6fb0858b49320b3e21fe83073a3f908"
+    },
+    "Locomo-5": {
+      "questions": 5,
+      "f1": 0.11625360608444794,
+      "run_id": "abf21f0f-a3c4-47ff-8058-5fc8f0a8e963",
+      "api_calls": 58,
+      "actual_usd": 2.523318,
+      "predict_sha256": "5bc79448bdfe8bac3bd8b90d9dd2dc2c6201b4df7063170a632bb8f9415d8322"
+    },
+    "Locomo-6": {
+      "questions": 5,
+      "f1": 0.8,
+      "run_id": "6600f2af-1248-4617-acac-dc68130344f1",
+      "api_calls": 60,
+      "actual_usd": 1.998267,
+      "predict_sha256": "bd4d1dbb9ec8825d0ffabeecba441a48b98f80d53cae177e76edeb6f3c41fdef"
+    },
+    "Locomo-7": {
+      "questions": 5,
+      "f1": 0.25263157894736843,
+      "run_id": "57596bac-a3e5-4d2d-a84b-c843feb2ffa2",
+      "api_calls": 64,
+      "actual_usd": 2.506812,
+      "predict_sha256": "b8791d322ae80e75c5d54756eae099d0bc5531ac903ce00a43718945595a3fd2"
+    },
+    "Locomo-8": {
+      "questions": 5,
+      "f1": 0.30332313690208423,
+      "run_id": "d64e8c29-acca-43b5-ac58-164ebbc4d03a",
+      "api_calls": 57,
+      "actual_usd": 2.1423330000000003,
+      "predict_sha256": "77d8b418b88ce7392ef2b97923b02b971be7cb0e1102c9c0c4e5c36e053cc3c2"
+    },
+    "Locomo-9": {
+      "questions": 5,
+      "f1": 0.6,
+      "run_id": "02343f63-6d55-4fe5-b508-ac8c32601fed",
+      "api_calls": 61,
+      "actual_usd": 2.197473,
+      "predict_sha256": "b180f8193846eb038a10e9a3caab8c987b28f30102a5f50c4ac56256c0461b94"
+    }
+  },
+  "api_calls_matched": 596,
+  "memorybench_actual_usd": 20.552814,
+  "source_appearances_checked": 12500,
+  "stored_vector_appearances_recomputed": 13948,
+  "foreign_records_in_retrieved_traces": 0,
+  "zip_sha256": "bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c",
+  "predictions_sha256": "317109c53eee7ad294827361c84578a01e02f14bdcb0cf6571b390f03d282747",
+  "fixed_settings": {
+    "model": "claude-sonnet-4-6",
+    "max_rounds": 3,
+    "train_max_tokens": 2048,
+    "test_max_tokens": 4096,
+    "retrieve_k": 50,
+    "temperature": 1,
+    "top_p": null,
+    "dataset_revision": "3acd60a4bd35b43b408f0e6db4c5f1e88df5e96d",
+    "engine_commit": "d952129834f1749c412a04528a4f9138d94a7d74",
+    "upstream_commit": "247ba8c1e327fa297c0d57aaad0e3cbd66bac656"
+  },
+  "paid_audit_calls": 0,
+  "uploaded": false,
+  "venue_accepted": false,
+  "status": "Local evaluation complete; no organizer-issued score or public leaderboard acceptance established",
+  "per_question_f1": {
+    "Locomo-0": [
+      {
+        "test_idx": 129,
+        "f1": 0.17391304347826084
+      },
+      {
+        "test_idx": 189,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 143,
+        "f1": 0.17391304347826084
+      },
+      {
+        "test_idx": 188,
+        "f1": 1.0
+      }
+    ],
+    "Locomo-1": [
+      {
+        "test_idx": 64,
+        "f1": 0.14285714285714288
+      },
+      {
+        "test_idx": 94,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 81,
+        "f1": 0.3846153846153846
+      },
+      {
+        "test_idx": 71,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 101,
+        "f1": 1.0
+      }
+    ],
+    "Locomo-2": [
+      {
+        "test_idx": 154,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 189,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 50,
+        "f1": 0.02469135802469136
+      },
+      {
+        "test_idx": 26,
+        "f1": 0.11363636363636362
+      }
+    ],
+    "Locomo-3": [
+      {
+        "test_idx": 129,
+        "f1": 0.09756097560975609
+      },
+      {
+        "test_idx": 125,
+        "f1": 0.028571428571428574
+      },
+      {
+        "test_idx": 57,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 143,
+        "f1": 0.03389830508474576
+      },
+      {
+        "test_idx": 173,
+        "f1": 0.01739130434782609
+      }
+    ],
+    "Locomo-4": [
+      {
+        "test_idx": 55,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 189,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 0.1111111111111111
+      },
+      {
+        "test_idx": 154,
+        "f1": 0.09090909090909091
+      },
+      {
+        "test_idx": 188,
+        "f1": 0.0
+      }
+    ],
+    "Locomo-5": [
+      {
+        "test_idx": 56,
+        "f1": 0.125
+      },
+      {
+        "test_idx": 62,
+        "f1": 0.08333333333333333
+      },
+      {
+        "test_idx": 28,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 1,
+        "f1": 0.24390243902439027
+      },
+      {
+        "test_idx": 22,
+        "f1": 0.12903225806451613
+      }
+    ],
+    "Locomo-6": [
+      {
+        "test_idx": 187,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 70,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 166,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 173,
+        "f1": 1.0
+      }
+    ],
+    "Locomo-7": [
+      {
+        "test_idx": 59,
+        "f1": 0.06315789473684211
+      },
+      {
+        "test_idx": 189,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 0.19999999999999998
+      },
+      {
+        "test_idx": 236,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 188,
+        "f1": 0.0
+      }
+    ],
+    "Locomo-8": [
+      {
+        "test_idx": 154,
+        "f1": 0.3157894736842105
+      },
+      {
+        "test_idx": 189,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 50,
+        "f1": 0.10111111111111111
+      },
+      {
+        "test_idx": 26,
+        "f1": 0.09971509971509972
+      }
+    ],
+    "Locomo-9": [
+      {
+        "test_idx": 59,
+        "f1": 0.0
+      },
+      {
+        "test_idx": 189,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 163,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 201,
+        "f1": 1.0
+      },
+      {
+        "test_idx": 188,
+        "f1": 0.0
+      }
+    ]
+  },
+  "audit_artifact_sha256": {
+    "Locomo-0.audit.json": "e9e72c761c94d30e8a5271f1a4e678b24246d3400158307b32d85fadf3a0833b",
+    "Locomo-1.audit.json": "105159c3853ce8d17b65cf1244adedb2c1eb7377eff3b062d407b60817671cb6",
+    "Locomo-2.audit.json": "2496078fe7ef9043585de7360c34a6db1aa53b7619e675855ea44b077aa3044f",
+    "Locomo-3.audit.json": "589c44577eb3754b1d748aaa1c4924fc2dc566a08bc9577e23df7812a61a5f89",
+    "Locomo-4.audit.json": "00b5bee27bc0c29745359b94952edb9479563c32b2797f2c771a9a73af3bebfa",
+    "Locomo-5.audit.json": "043edca40bf409f2b0195c6e6e4d5f441d7b5fea3e645f43e82aefc3f6adf516",
+    "Locomo-6.audit.json": "f890273550c362df843198417ade2db1afcad74239d6e57314e2d6d250b773a3",
+    "Locomo-7.audit.json": "8009ce517cab7fdc63f5c10e6569ddb1e2bff4d381ebae5dd399c42fcbba2df9",
+    "Locomo-8.audit.json": "86e9d37e775bec493e2917cfe8db88d82fba7bd7cf11c61c21dbe50226fc94d5",
+    "Locomo-9.audit.json": "79a067039cb89ba1f78bb978fc9deff9d098436e63b6f55de8fb15e1178a27c0"
+  }
+}
