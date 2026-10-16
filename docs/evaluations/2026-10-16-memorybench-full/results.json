@@ -1,0 +1,375 @@
+{
+  "dataset_count": 28,
+  "test_items": 819,
+  "new_outputs": 769,
+  "original_outputs": 50,
+  "original_zip_sha256": "bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c",
+  "zip_sha256": "ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3",
+  "maximum_response_chars": 77439,
+  "empty_outputs": [
+    {
+      "dataset": "IdeaBench",
+      "test_idx": 260
+    },
+    {
+      "dataset": "IdeaBench",
+      "test_idx": 995
+    },
+    {
+      "dataset": "IdeaBench",
+      "test_idx": 1731
+    },
+    {
+      "dataset": "IdeaBench",
+      "test_idx": 1881
+    },
+    {
+      "dataset": "NFCats",
+      "test_idx": 1993
+    }
+  ],
+  "extension_test_stop_reasons": {
+    "end_turn": 714,
+    "max_tokens": 48,
+    "refusal": 7
+  },
+  "extension_paid_calls": 1739,
+  "extension_actual_usd": 259.265091,
+  "status": "Local generation and provenance audits complete; full submission and organizer evaluation pending",
+  "model": "claude-sonnet-4-6",
+  "data_revision": "3acd60a4bd35b43b408f0e6db4c5f1e88df5e96d",
+  "protocol": "28 independent native SINGLE-dataset off-policy experiments; not seven pooled native CLI experiments",
+  "full_suite_score": null,
+  "public_rank": null,
+  "datasets": {
+    "DialSim-bigbang": {
+      "test_items": 17,
+      "training_items": 66,
+      "predict_sha256": "f122acb7ed4eac6068931f36e491c828eaa584b7dfd055f456c04282a5f02b02",
+      "max_output_tokens": 8192
+    },
+    "DialSim-friends": {
+      "test_items": 17,
+      "training_items": 66,
+      "predict_sha256": "519328c096a4d452ae2c029cad32ce4db608d7d6c10d4f2dcf44563ed25a5ca0",
+      "max_output_tokens": 8192
+    },
+    "DialSim-theoffice": {
+      "test_items": 17,
+      "training_items": 67,
+      "predict_sha256": "b93f6dce28586b06c44d2bcf3749deb593d93e126d8aa2f51b9e3f1858c5ff55",
+      "max_output_tokens": 8192
+    },
+    "HelloBench-Academic&Knowledge-QA": {
+      "test_items": 43,
+      "training_items": 170,
+      "predict_sha256": "e3980ee738d67978220d1ab37cf9019d3f4ce8027f01464d75eb88bd8597ea23",
+      "max_output_tokens": 16384
+    },
+    "HelloBench-Academic&Knowledge-Writing": {
+      "test_items": 17,
+      "training_items": 65,
+      "predict_sha256": "153197f50a35b100ae7bccb6b60a6d2db136599bec3f3bafd114d4b2be28fca0",
+      "max_output_tokens": 16384
+    },
+    "HelloBench-Creative&Design": {
+      "test_items": 47,
+      "training_items": 181,
+      "predict_sha256": "df4d2730ff776a67e132b97a1599c81e4db38f19b83fbb7b69970a8528d92abc",
+      "max_output_tokens": 16384
+    },
+    "IdeaBench": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "a4adeea4d9422d92dc9c5fea09de15f75eb55d5dc3ad9af79a71cdac92fad131",
+      "max_output_tokens": 8192
+    },
+    "JRE-L": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "dab12e7f44590afb2e01fc8d6cf5c154ea931907c104424e0896adb7b1e768e4",
+      "max_output_tokens": 4096
+    },
+    "JuDGE": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "221e9c4da36eed9108c6409f7045de68c44b0aab75256e3e0e41c217a29419df",
+      "max_output_tokens": 2048
+    },
+    "LexEval-Judge": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "debff3a250428394a61ee7a10d54f6c18c6db2f28ae2dcf30e132011e8e87a2c",
+      "max_output_tokens": 8192
+    },
+    "LexEval-QA": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "c3416a9cfeb0a5d304f00b08b222ba5608ec3836d560c17159774293832987d5",
+      "max_output_tokens": 8192
+    },
+    "LexEval-Summarization": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "39c56a2d73cfd3d28695016b2e839eb364edd931756c8e9439509987c1241751",
+      "max_output_tokens": 8192
+    },
+    "LimitGen-Syn": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "59cc8f0809fa5908c24db9a5990c013e88ac51971e370092faccca53c67934e6",
+      "max_output_tokens": 500
+    },
+    "NFCats": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "a8e16b862fd4cadac5bfd04e2c2850e4c0b8e65148b10015a833efa8ce729a9b",
+      "max_output_tokens": 8192
+    },
+    "WritingBench-Academic&Engineering": {
+      "test_items": 34,
+      "training_items": 133,
+      "predict_sha256": "37374b7d673b784c43035bd86380a562cb1ac8acaa660691db36578bd4422672",
+      "max_output_tokens": 16000
+    },
+    "WritingBench-Creative&Design": {
+      "test_items": 86,
+      "training_items": 336,
+      "predict_sha256": "3d2f00d31dfb1c4fb02f13e03d87852127fe912524e29a2d2461102a640a3da5",
+      "max_output_tokens": 16000
+    },
+    "WritingBench-Politics&Law": {
+      "test_items": 41,
+      "training_items": 160,
+      "predict_sha256": "0d37be196052c085c9b8c04cc2b9d3f6d46cf7192c0084041eb35e0d548f906b",
+      "max_output_tokens": 16000
+    },
+    "WritingPrompts": {
+      "test_items": 50,
+      "training_items": 200,
+      "predict_sha256": "c0f2b5a59c0dec37af6e22fed1043814b6b25a37c209e7f1c5cab960c623a914",
+      "max_output_tokens": 8192
+    },
+    "Locomo-0": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "76049abfd6c0d30e4d317b6a2b4aeaa5dc37ec4767331a755497bc6d3defc602"
+    },
+    "Locomo-1": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "94851653ed702bd6596f1d024efbe92c0a7dc87e3a6c0ca0f3837e5b42f62c2e"
+    },
+    "Locomo-2": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "57760774c4dd1f490b4a584a031883a82564f378ed4a5380755d38df5829a5f3"
+    },
+    "Locomo-3": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "b0408ce592fdc3ba1f72581bc76b3c4091d73637a830076a1aa55046e4d9eaf0"
+    },
+    "Locomo-4": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "1a20697d9f776b7098bf2f9f22ba9d0ef68d70adb3ebc14678829854d56550a9"
+    },
+    "Locomo-5": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "97f62862ee4a80fd6c22989a09eb23ebdb2cdd53babaffbf9480602c5eb8e2a8"
+    },
+    "Locomo-6": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "d0afa0d8a5a0caddbff95dc97386203f61478b7bcd2d8868183013a87e394036"
+    },
+    "Locomo-7": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "75f731557f983d4b3bd18382d566a9ef496cfa8083e8b8d9dbd3dee5aee84432"
+    },
+    "Locomo-8": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "8cb428cd250ef71930a12b533dc003634438b90851fb7463891d6058b1f9a581"
+    },
+    "Locomo-9": {
+      "test_items": 5,
+      "training_items": 20,
+      "max_output_tokens": 4096,
+      "predict_sha256": "344e3e1ab65dedd7612d48bd494dca37d9131bf2c3b757f6f9f97d3f84fe8d34"
+    }
+  },
+  "audits": [
+    {
+      "dataset": "DialSim-bigbang",
+      "training_dialogs": 66,
+      "test_items": 17,
+      "api_calls_matched": 340,
+      "judge_calls": 130,
+      "feedback_decisions_verified": 130,
+      "retrieved_source_appearances_checked": 4150,
+      "stored_vector_appearances_compared": 39062,
+      "unique_text_vectors_computed": 19405,
+      "foreign_records_in_checked_scopes": 0,
+      "report_sha256": "dcadc6c52e0b9e3e6a34c8b21b2587ad5102d137ec46de74be605d3bacf01aaf"
+    },
+    {
+      "dataset": "DialSim-friends",
+      "training_dialogs": 66,
+      "test_items": 17,
+      "api_calls_matched": 341,
+      "judge_calls": 130,
+      "feedback_decisions_verified": 130,
+      "retrieved_source_appearances_checked": 4150,
+      "stored_vector_appearances_compared": 38072,
+      "unique_text_vectors_computed": 18909,
+      "foreign_records_in_checked_scopes": 0,
+      "report_sha256": "d6e5fbae8cd50190a0d5cb88fa543318c8dce109bdd0047e56d7b2a761c3f15d"
+    },
+    {
+      "dataset": "DialSim-theoffice",
+      "training_dialogs": 67,
+      "test_items": 17,
+      "api_calls_matched": 340,
+      "judge_calls": 130,
+      "feedback_decisions_verified": 130,
+      "retrieved_source_appearances_checked": 4200,
+      "stored_vector_appearances_compared": 39092,
+      "unique_text_vectors_computed": 19421,
+      "foreign_records_in_checked_scopes": 0,
+      "report_sha256": "07d6263916a6d0cbf59255299028b35bc7947de64f8cc336eeb1d778e5af41b7"
+    },
+    {
+      "dataset": "HelloBench-Academic&Knowledge-QA",
+      "test_items": 43,
+      "retrieved_source_appearances_checked": 2150,
+      "stored_vectors_recomputed": 650,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "05fca709e6553a5954cddceb4fed28a50fc3e2fa90d6eec71ecece9fc8d32e02"
+    },
+    {
+      "dataset": "HelloBench-Academic&Knowledge-Writing",
+      "test_items": 17,
+      "retrieved_source_appearances_checked": 850,
+      "stored_vectors_recomputed": 192,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "6379d88d08c4837e9e66faf04d0102556a9e6d3fb713b7d6799d267a5577cb63"
+    },
+    {
+      "dataset": "HelloBench-Creative&Design",
+      "test_items": 47,
+      "retrieved_source_appearances_checked": 2350,
+      "stored_vectors_recomputed": 860,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "9ac4ffa827299f74ae8c75e8c2f67a5c9d899c8ac8fad8630bb1d60356af7f48"
+    },
+    {
+      "dataset": "IdeaBench",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 1200,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "3c491b743f78c79b9cb1dbc8ff62d83d96ed6030ae622036af4b0d796c6c912b"
+    },
+    {
+      "dataset": "JRE-L",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 1194,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "e316dc6fdfd4499548f8d84d46766ddcdb9cc02784adb4ebbe9d5ce919206460"
+    },
+    {
+      "dataset": "JuDGE",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 870,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "465efbda9b3054c57d7f0c9aef140c5eb7d9827bdbcbe48b462834b51826e7b9"
+    },
+    {
+      "dataset": "LexEval-Judge",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 976,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "c0d79a94df76b13785cbd858ace88adc271539e5b0e4121c3a8061f019f6dd40"
+    },
+    {
+      "dataset": "LexEval-QA",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 932,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "0880b44d0df191222f70707b8671f37ef1f5167ec470272e3c09c3c87426538b"
+    },
+    {
+      "dataset": "LexEval-Summarization",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 654,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "c60e54c6ba43bd3a14e0521a793ae71139bccb172095c765baaeda65f9df82b3"
+    },
+    {
+      "dataset": "LimitGen-Syn",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 1107,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "22657890da394b3ef36354b6709d41f9a005c0bda444cea1009e536a71dbc595"
+    },
+    {
+      "dataset": "NFCats",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 444,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "64cb48224d244ca908833a8ddc5e2bbd1317409b9da529d2e7af5e4319738461"
+    },
+    {
+      "dataset": "WritingBench-Academic&Engineering",
+      "test_items": 34,
+      "retrieved_source_appearances_checked": 1700,
+      "stored_vectors_recomputed": 628,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "a4311c09039563dc129564b8b1e674a87206a362461480f769b8f0b519cfb980"
+    },
+    {
+      "dataset": "WritingBench-Creative&Design",
+      "test_items": 86,
+      "retrieved_source_appearances_checked": 4300,
+      "stored_vectors_recomputed": 1536,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "14ed8aba9e504119becf7079588f0cde0ccb256ad6df5fd0de51be7363e41193"
+    },
+    {
+      "dataset": "WritingBench-Politics&Law",
+      "test_items": 41,
+      "retrieved_source_appearances_checked": 2050,
+      "stored_vectors_recomputed": 606,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "ebd8b36d0340cb5c9baf62a1bea59f1fc2bd79b5274d31fe55e7c1b32f813392"
+    },
+    {
+      "dataset": "WritingPrompts",
+      "test_items": 50,
+      "retrieved_source_appearances_checked": 2500,
+      "stored_vectors_recomputed": 1192,
+      "foreign_records_in_checked_scope": 0,
+      "report_sha256": "72d7084709b9ce82fae66fba7df55b63427d7c05b319fe441e2b1b678a56a009"
+    }
+  ]
+}
