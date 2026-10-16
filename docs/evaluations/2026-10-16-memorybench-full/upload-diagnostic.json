@@ -1,0 +1,18 @@
+{
+  "status": "REJECTED; no accepted full submission or organizer score",
+  "at": "2026-10-16T18:57:43.766290+00:00",
+  "endpoint": "https://memorybench.thuir.cn/api/v1/submissions",
+  "http_status": 413,
+  "response_server_header": "nginx/1.18.0 (Ubuntu)",
+  "response_title": "413 Request Entity Too Large",
+  "response_format": "HTML nginx error page, not a JSON submission receipt",
+  "request_content_length_bytes": 2197475,
+  "archive_bytes": 2195145,
+  "archive_sha256": "ed324ed17f17063afb59e67da5467dd7b5ecc3f262580819d43a2652f1fb3bc3",
+  "automatic_retries": 0,
+  "redirects_allowed": false,
+  "raw_private_evidence_sha256": "6860d34b37c34ffe4f81e8baa72dda6f4076e2a8cb6dcc4086a0db1526e653f1",
+  "interpretation": "A direct client reproduced rejection outside the in-app browser. HTTP413 is consistent with a request-size restriction; actual configured threshold and responsible layer are not established.",
+  "empty_response_backend_acceptance": null,
+  "full_upload_attempts": 3
+}
