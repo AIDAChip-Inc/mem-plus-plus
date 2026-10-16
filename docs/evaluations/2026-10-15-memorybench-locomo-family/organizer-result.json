@@ -1,0 +1,36 @@
+{
+  "submission_id": "7349e1e4441f417f8747670d200bfd63",
+  "source": "Organizer evaluation-complete email, transcribed from user-supplied screenshot; full result archive not inspected",
+  "test_items": 50,
+  "datasets": [
+    "Locomo-0",
+    "Locomo-1",
+    "Locomo-2",
+    "Locomo-3",
+    "Locomo-4",
+    "Locomo-5",
+    "Locomo-6",
+    "Locomo-7",
+    "Locomo-8",
+    "Locomo-9"
+  ],
+  "cases": {
+    "domain/Open-Domain": {
+      "average": 0.656,
+      "weighted_average": 0.656,
+      "z_score": 0.339
+    },
+    "task/Long-Short": {
+      "average": 0.656,
+      "weighted_average": 0.656,
+      "z_score": 0.3246
+    }
+  },
+  "overall_average_over_submitted_subset": 0.656,
+  "overlapping_case_labels": true,
+  "full_case_coverage": false,
+  "public_rank_established": false,
+  "elo_score": null,
+  "local_native_f1_separate_metric": 0.3950822032278713,
+  "zip_sha256": "bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c"
+}

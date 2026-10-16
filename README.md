@@ -477,11 +477,14 @@ These are weighted partial-credit scores, not percentages of fully correct answe
 
 
 
-### MemoryBench LoCoMo-family local run — 2026-10-15
+### MemoryBench LoCoMo-family results — 2026-10-15
 
 | Coverage | Metric | Result | Evaluation status |
 |:---|:---|---:|:---|
-| Locomo-0 through Locomo-9; all 50 official test items | Native local F1 (0–1) | **0.3950822** | Local run; no organizer-issued score or public ranking established |
+| Locomo-0 through Locomo-9; all 50 official test items | Native local F1 (0–1) | **0.3950822** | Local scoring of the submitted 50-item subset |
+| Same 50 submitted items | Organizer email average (0–1) | **0.6560** | Evaluation-complete email; partial case coverage; no public rank established |
+
+The organizer email assigns these same 50 answers to both Open-Domain and Long-Short; these are overlapping labels, not two complete case evaluations. Its average is a different metric from local F1 and does not establish an Elo rank.
 
 Ten independent native off-policy experiments used 20 own training dialogs per dataset, Claude Sonnet 4.6 answers, and local ONNX MiniLM-384 / PostgreSQL retrieval at k=50. Settings stayed fixed; no test answers were replaced. This covers the LoCoMo family within MemoryBench, not the full suite or the paper's original LoCoMo protocol. See [protocol, per-dataset results and audit summary](docs/evaluations/2026-10-15-memorybench-locomo-family/README.md).
 
