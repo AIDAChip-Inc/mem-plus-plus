@@ -1,6 +1,6 @@
 # MemoryBench LoCoMo-family local evaluation — 2026-10-15
 
-Mem++ produced answers for all 50 official test items across `Locomo-0` through `Locomo-9` in MemoryBench. Mean local F1 using the pinned native scorer was **0.3950822** (0–1 scale). This is a local evaluation of that family only: it is not the entire MemoryBench suite, an organizer-issued website score, a public leaderboard placement, or a reproduction of the paper's original LoCoMo evaluation. No comparative rank is claimed.
+Mem++ produced answers for all 50 official test items across `Locomo-0` through `Locomo-9` in MemoryBench. Mean local F1 using the pinned native scorer was **0.3950822** (0–1 scale). This local F1 measures that family only: it is not a score for the entire MemoryBench suite, the organizer-issued website metric, a public leaderboard placement, or a reproduction of the paper's original LoCoMo evaluation. No comparative rank is claimed.
 
 ## Protocol
 
@@ -29,12 +29,26 @@ Each dataset was a separate native off-policy experiment with its own memory sco
 | Locomo-9 | 5 | 0.600000 |
 | **Combined** | **50** | **0.395082** |
 
-These are single runs without confidence intervals. Local token-overlap F1 is not a percentage of fully correct answers. It is distinct from any subsequent organizer scoring. The small per-dataset samples do not establish comparative superiority.
+These are single runs without confidence intervals. Local token-overlap F1 is not a percentage of fully correct answers. It is distinct from the organizer email average below. The small per-dataset samples do not establish comparative superiority.
 
 ## Evidence and limits
 
-[Machine-readable results](results.json) preserve per-item F1, exact counts, fixed settings, prediction hashes and the hashes of ten saved audit reports. The controlled local drivers retained API requests/responses, original retrieval contexts and source records. Read-only audits checked the saved predictions against actual API outputs, reconstructed source records, checked 12,500 retrieved source appearances and recomputed 13,948 stored-vector appearances. No foreign-scope records were found in the audited retrieval traces. These checks establish provenance and scope for this run; they do not establish answer correctness independently of the scorer.
+[Machine-readable results](results.json) are the frozen pre-submission local-audit snapshot; its historical upload and organizer-status fields are superseded by [organizer-result.json](organizer-result.json). The snapshot preserves per-item F1, exact counts, fixed settings, prediction hashes and the hashes of ten saved audit reports. The controlled local drivers retained API requests/responses, original retrieval contexts and source records. Read-only audits checked the saved predictions against actual API outputs, reconstructed source records, checked 12,500 retrieved source appearances and recomputed 13,948 stored-vector appearances. No foreign-scope records were found in the audited retrieval traces. These checks establish provenance and scope for this run; they do not establish answer correctness independently of the scorer.
 
 The run used 596 actual answer-generation API calls costing $20.552814. Audits made no paid API calls. Raw request/source traces and the controlled run drivers are retained locally, rather than included in this public summary; this report alone is not a complete independently rerunnable experiment bundle. No credentials or contact address are included.
 
 The exact prepared website ZIP has SHA256 `bf9077824282a8abcf3a5506c87b9207e3e3c3da501dd1e4df8077870f48ce2c`; combined predictions SHA256 is `317109c53eee7ad294827361c84578a01e02f14bdcb0cf6571b390f03d282747`. Website evaluation is separate and does not automatically establish a public ranking.
+
+
+## Organizer subset evaluation
+
+The organizer evaluation-complete email for submission `7349e1e4441f417f8747670d200bfd63` reports the following scores for the same submitted 50 answers. These values were transcribed from the user-supplied email screenshot; the full result archive has not been inspected.
+
+| Organizer case label | Average | Weighted average | Z-score |
+|---|---:|---:|---:|
+| domain/Open-Domain | 0.6560 | 0.6560 | 0.3390 |
+| task/Long-Short | 0.6560 | 0.6560 | 0.3246 |
+
+The email's overall average over this submitted subset is **0.6560**. The two labels describe overlapping coverage of the same 50 LoCoMo items, not 100 distinct answers or two complete cases. This is separate from the native local F1 result above, so the difference between 0.3950822 and 0.6560 is not a measured improvement on one metric. No Elo score or ordinal rank was provided. Different coverage, answer models and score transformations prevent a direct ranking against public baseline heatmaps.
+
+[Machine-readable organizer email transcription](organizer-result.json) records the values and source limitations. Website evaluation does not automatically establish public leaderboard inclusion. No contact information or email screenshot is published here.
