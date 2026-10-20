@@ -477,9 +477,27 @@ These are weighted partial-credit scores, not percentages of fully correct answe
 
 
 
-### MemoryBench full coverage — 2026-10-16
+### MemoryBench organizer-evaluated corrected replay — 2026-10-19
 
-All **819 official test items across 28 datasets** now have recorded outputs: the original 50 LoCoMo outputs plus 769 new outputs. Claude Sonnet 4.6, local ONNX MiniLM-384 / PostgreSQL retrieval at k=50, and effective per-dataset caps stayed fixed across 28 independent native SINGLE-dataset off-policy experiments. The website rejected the 2.09 MiB DEFLATE ZIP and a 1.61 MiB lossless BZIP2 ZIP despite its published 500 MiB limit. A direct-client attempt to the same public upload endpoint also returned HTTP 413 with an nginx error page; no accepted full submission is established. Full organizer evaluation and public ranking remain pending; generation and provenance checks are not an accuracy score. The archive retains 48 capped responses and seven provider refusals, including five empty outputs whose website acceptance is unverified. See [exact split counts, protocol, API evidence and audit summary](docs/evaluations/2026-10-16-memorybench-full/README.md).
+The organizer reported **Overall average 0.6261** for `mem++_full_v5_refusal_format` (submission `693dfc58d3eb4fe49f1311b1bf9a6fe6`). Submitted coverage was **819 official items across 28 datasets**. This separate answer-only replay used Claude Sonnet 4.6 at temperature 0, local ONNX MiniLM-384 / PostgreSQL memory, frozen top-50 candidate pools and a 12,000-byte evidence budget. It reused audited training/memory states; it was not a fresh native training run or the paper protocol. Development used this same cohort, not an unseen holdout.
+
+| Organizer case group | Average | Weighted Avg | Z-Score |
+|:---|---:|---:|---:|
+| domain/Academic&Knowledge | 0.7129 | 0.6671 | 1.2178 |
+| domain/Legal | 0.5458 | 0.5388 | 0.2974 |
+| domain/Open-Domain | 0.5376 | 0.7133 | 1.2492 |
+| task/Long-Long | 0.7901 | 0.7562 | 1.7990 |
+| task/Long-Short | 0.2741 | 0.3743 | 0.0235 |
+| task/Short-Long | 0.7376 | 0.7320 | 0.8069 |
+| task/Short-Short | 0.7947 | 0.7947 | 0.9101 |
+
+The seven case labels overlap: each submitted item belongs to one domain and one task group. The evaluated archive contains **817 unchanged model response strings and two disclosed adapter markers for actual empty provider refusals**. Those markers are not model-generated answers. Raw outputs remain preserved.
+
+These are organizer-email metrics, not accuracy, local F1, Elo or an established public rank. The attached per-item result archive, individual refusal-marker scoring and overall aggregation formula have not been independently inspected or verified. Email evaluation does not automatically publish a leaderboard entry. See the [result and coverage record](docs/evaluations/2026-10-19-memorybench-v5/README.md), [procedure and issue history](docs/evaluations/2026-10-19-memorybench-v5/PROCEDURE.md), and [machine-readable results](docs/evaluations/2026-10-19-memorybench-v5/results.json).
+
+### MemoryBench original full coverage — 2026-10-16
+
+The original run recorded **819 official test outputs across 28 datasets**: the original 50 LoCoMo outputs plus 769 new outputs. Claude Sonnet 4.6, local ONNX MiniLM-384 / PostgreSQL retrieval at k=50, and effective per-dataset caps stayed fixed across 28 independent native SINGLE-dataset off-policy experiments. At this checkpoint, the website rejected the 2.09 MiB DEFLATE ZIP and a 1.61 MiB lossless BZIP2 ZIP despite its published 500 MiB limit. A direct-client attempt also returned HTTP 413; no accepted full submission or score had been established for that archive. It retained 48 capped responses and seven provider refusals, including five empty outputs. These preserved artifacts and [original protocol/audit](docs/evaluations/2026-10-16-memorybench-full/README.md) are historical and separate from the corrected replay reported above. Generation and provenance checks are not an accuracy score.
 
 ### MemoryBench LoCoMo-family results — 2026-10-15
 

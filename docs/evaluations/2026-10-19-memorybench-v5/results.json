@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "status": "ORGANIZER_EMAIL_EVALUATION_COMPLETE",
+  "report_date": "2026-10-19",
+  "evidence": "Sanitized transcription of user-provided organizer evaluation-complete email; attachment not inspected.",
+  "submission": {
+    "id": "693dfc58d3eb4fe49f1311b1bf9a6fe6",
+    "system_name": "mem++_full_v5_refusal_format",
+    "zip_sha256": "3cb6f3fbf2b76390d06f72a9ff3baf4e5f26be004e129d45526677b917ae8f43",
+    "zip_bytes": 2031741,
+    "submitted_unique_items": 819,
+    "submitted_datasets": 28,
+    "verbatim_model_texts": 817,
+    "adapter_rendered_empty_refusals": 2,
+    "adapter_marker": "[No answer: provider returned an empty refusal.]",
+    "adapter_marker_keys": [
+      {
+        "dataset": "IdeaBench",
+        "test_idx": 995
+      },
+      {
+        "dataset": "IdeaBench",
+        "test_idx": 1881
+      }
+    ],
+    "raw_v5_zip_sha256": "ee30fe9640dd604d71fa4d20482a2c8a530e460fa0ba6c84b131d477d583521b",
+    "raw_v5_zip_bytes": 2031670
+  },
+  "organizer_metrics": {
+    "overall_average_reported": 0.6261,
+    "cases": [
+      {
+        "case": "domain/Academic&Knowledge",
+        "average": 0.7129,
+        "weighted_average": 0.6671,
+        "z_score": 1.2178
+      },
+      {
+        "case": "domain/Legal",
+        "average": 0.5458,
+        "weighted_average": 0.5388,
+        "z_score": 0.2974
+      },
+      {
+        "case": "domain/Open-Domain",
+        "average": 0.5376,
+        "weighted_average": 0.7133,
+        "z_score": 1.2492
+      },
+      {
+        "case": "task/Long-Long",
+        "average": 0.7901,
+        "weighted_average": 0.7562,
+        "z_score": 1.799
+      },
+      {
+        "case": "task/Long-Short",
+        "average": 0.2741,
+        "weighted_average": 0.3743,
+        "z_score": 0.0235
+      },
+      {
+        "case": "task/Short-Long",
+        "average": 0.7376,
+        "weighted_average": 0.732,
+        "z_score": 0.8069
+      },
+      {
+        "case": "task/Short-Short",
+        "average": 0.7947,
+        "weighted_average": 0.7947,
+        "z_score": 0.9101
+      }
+    ]
+  },
+  "protocol": {
+    "mode": "Separately authorized full-cohort answer-only replay of frozen audited native off-policy memory states and top-50 candidate pools; not a fresh training run.",
+    "model": "claude-sonnet-4-6",
+    "temperature": 0,
+    "embedding": "Local ONNX all-MiniLM-L6-v2, 384 dimensions",
+    "storage": "PostgreSQL/pgvector",
+    "candidate_pool_k": 50,
+    "evidence_budget_utf8_bytes": 12000,
+    "selector": "Whole source units; 2:1 semantic:BM25 RRF, smoothing60; conversation primary-first scoring for80items, fallback739.",
+    "native_code_commit": "247ba8c1e327fa297c0d57aaad0e3cbd66bac656",
+    "official_dataset_revision": "3acd60a4bd35b43b408f0e6db4c5f1e88df5e96d",
+    "official_index_manifest_sha256": "ee72b718ef79a863d9e2e5fb87706e062efa0e949c1141c7049507e44edf28df",
+    "frozen_request_cohort_sha256": "8f124686d6a1d6313702a605f233992df8d1821003bd3dca2daf9d793b3d6cba",
+    "preparation_manifest_sha256": "f37d7dd08da86cc926370bdc62a8fd299749d8073742e1c4ce494016e51b85a6",
+    "same_cohort_development_exposure": true,
+    "wrapper_checkout_commit": "a684eb9796d8a5386819c5bcda52ba2be94f5109",
+    "local_embedding_helper_sha256": "ed7239440cc54886232b32391a033a444e4e0506d7f1417c727eee031a75cc8f"
+  },
+  "raw_outcomes": {
+    "end_turn": 812,
+    "max_tokens": 5,
+    "empty_refusal": 2,
+    "settled_outcomes": 819,
+    "attempts_including_two_unknown_originals": 821,
+    "unknown_original_call_holds_usd": 0.664194,
+    "final_audit_sha256": "e89f9ad4161519109816e17d3cbc4c13c3bd18f3e589a01de35553b0ad294cf9"
+  },
+  "verification_limits": {
+    "submitted_coverage_is_not_verified_scored_item_count": true,
+    "per_item_result_archive_inspected": false,
+    "individual_refusal_marker_scoring_verified": false,
+    "overall_aggregation_formula_verified": false,
+    "same_normalization_as_public_heatmap_verified": false,
+    "public_rank_established": false,
+    "automatic_leaderboard_publication": false,
+    "unseen_holdout": false,
+    "public_one_command_exact_score_reproduction_available": false,
+    "score_is_accuracy_f1_or_elo": false
+  },
+  "dataset_coverage": [
+    {
+      "dataset": "DialSim-bigbang",
+      "submitted_items": 17,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "DialSim-friends",
+      "submitted_items": 17,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "DialSim-theoffice",
+      "submitted_items": 17,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "HelloBench-Academic&Knowledge-QA",
+      "submitted_items": 43,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Short-Long",
+      "output_token_cap": 16384
+    },
+    {
+      "dataset": "HelloBench-Academic&Knowledge-Writing",
+      "submitted_items": 17,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 16384
+    },
+    {
+      "dataset": "HelloBench-Creative&Design",
+      "submitted_items": 47,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 16384
+    },
+    {
+      "dataset": "IdeaBench",
+      "submitted_items": 50,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "JRE-L",
+      "submitted_items": 50,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Short-Short",
+      "output_token_cap": 4096
+    },
+    {
+      "dataset": "JuDGE",
+      "submitted_items": 50,
+      "domain_group": "domain/Legal",
+      "task_group": "task/Short-Long",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "LexEval-Judge",
+      "submitted_items": 50,
+      "domain_group": "domain/Legal",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "LexEval-QA",
+      "submitted_items": 50,
+      "domain_group": "domain/Legal",
+      "task_group": "task/Short-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "LexEval-Summarization",
+      "submitted_items": 50,
+      "domain_group": "domain/Legal",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "LimitGen-Syn",
+      "submitted_items": 50,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 2048
+    },
+    {
+      "dataset": "Locomo-0",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-1",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-2",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-3",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-4",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-5",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-6",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-7",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-8",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "Locomo-9",
+      "submitted_items": 5,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "NFCats",
+      "submitted_items": 50,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Short-Short",
+      "output_token_cap": 8192
+    },
+    {
+      "dataset": "WritingBench-Academic&Engineering",
+      "submitted_items": 34,
+      "domain_group": "domain/Academic&Knowledge",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 16000
+    },
+    {
+      "dataset": "WritingBench-Creative&Design",
+      "submitted_items": 86,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 16000
+    },
+    {
+      "dataset": "WritingBench-Politics&Law",
+      "submitted_items": 41,
+      "domain_group": "domain/Legal",
+      "task_group": "task/Long-Long",
+      "output_token_cap": 16000
+    },
+    {
+      "dataset": "WritingPrompts",
+      "submitted_items": 50,
+      "domain_group": "domain/Open-Domain",
+      "task_group": "task/Short-Long",
+      "output_token_cap": 8192
+    }
+  ]
+}
