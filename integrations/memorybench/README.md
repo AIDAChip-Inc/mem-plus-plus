@@ -33,7 +33,10 @@ eligibility. A locally edited manifest cannot establish official coverage.
 
 Provide a UTF-8 JSON array containing `dataset` (exact official name), integer
 `test_idx`, and string `response` for every required test ID of each included
-dataset. Empty strings are allowed as explicit abstentions. Booleans are not IDs.
+dataset. This local helper allows empty strings as explicit abstentions, but
+the organizer website has since rejected empty responses. Preserve raw refusals
+and agree on or disclose any submission rendering; do not silently invent an
+answer. See the [V5 procedure](../../docs/evaluations/2026-10-19-memorybench-v5/PROCEDURE.md). Booleans are not IDs.
 Duplicate IDs/keys, missing or extra IDs, unknown datasets, and nonstandard JSON
 constants fail validation. Extra row fields are omitted from the ZIP, preventing
 accidental inclusion of prompts, labels, or local run metadata.
@@ -63,8 +66,9 @@ acceptance of its guidelines; description and submission notes are optional.
 Choose a free local model or obtain an explicit inference budget before a paid
 run. Review the completed answers and claims with Claude, Kimi and independent
 Codex before upload. Evaluation results are emailed and **not automatically
-published** to the public leaderboard. No scored Mem++ submission has been made
-through this utility. The website displayed no deadline when inspected.
+published** to the public leaderboard. A separate controlled answer-only run
+now has [organizer-email results and a submission history](../../docs/evaluations/2026-10-19-memorybench-v5/README.md); the helper itself does not generate or evaluate answers.
+The website displayed no deadline when inspected.
 
 ## Native MemoryBench off-policy integration
 
