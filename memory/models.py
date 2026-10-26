@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -85,6 +85,28 @@ class FlexibleTSVector(TypeDecorator):
         return dialect.type_descriptor(Text())
 
 
+class UTCDateTime(TypeDecorator):
+    """Preserve event instants across PostgreSQL and timezone-naive SQLite.
+
+    SQLite discards offsets on ordinary DateTime binds. Normalize before that
+    happens, including query bounds; materialize UTC consistently on both backends.
+    Existing naive input is interpreted as UTC, matching recall's time contract.
+    """
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
 class MemoryTier(enum.StrEnum):
     """Memory tiers. This replica uses only AGENT_WORKING."""
 
@@ -104,13 +126,13 @@ class AgentMemory(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        UTCDateTime(), server_default=func.now(), nullable=False
     )
     last_used_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        UTCDateTime(), server_default=func.now(), nullable=False
     )
     occurred_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, index=True
+        UTCDateTime(), nullable=True, index=True
     )
 
     # Hit tracking (CPU-cache analogy: count + which agent hit it)
@@ -134,9 +156,9 @@ class AgentMemory(Base):
     # Bi-temporal validity for queryable supersession. A fact is CURRENT iff
     # valid_to IS NULL. valid_from backfills to occurred_at else created_at.
     valid_from: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        UTCDateTime(), server_default=func.now(), nullable=False
     )
-    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    valid_to: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     # Self-FK provenance: superseded -> current (SET NULL, never cascade).
     superseded_by_id: Mapped[uuid.UUID | None] = mapped_column(
         GUID(), ForeignKey("agent_memory.id", ondelete="SET NULL"), nullable=True, index=True
@@ -244,7 +266,7 @@ class MemoryAPIRequest(Base):
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True)
     payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        UTCDateTime(), server_default=func.now(), nullable=False
     )
 
 
@@ -263,7 +285,7 @@ class MemoryConsolidationRun(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
     scope_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    last_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_run_at: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
     groups_merged: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     rows_archived: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     cost_calls: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

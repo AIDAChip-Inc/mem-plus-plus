@@ -2,13 +2,15 @@
 
 > Mem++ is AIDAChip's open-source organizational memory engine for LLM agents. It stores verbatim, dated source records and retrieves evidence using PostgreSQL full-text search, pgvector embeddings, and tags attached to source records.
 
-Python 3.13+ and PostgreSQL with pgvector are required. The default embedding model runs locally on CPU using ONNX MiniLM-384. The verbatim write and retrieval paths need no generative LLM calls. Optional extraction, consolidation, and answer/judge configurations have separate model requirements.
+Python 3.13+ is required. PostgreSQL with pgvector is the default storage backend. An optional object-store backend uses chunked immutable SQLite snapshots in S3 (or a compatible store), concurrent writers with optimistic row conflict detection, and disposable reader caches; its local lexical and exact vector search differ from the published PostgreSQL benchmark configuration. The default embedding model runs locally on CPU using ONNX MiniLM-384. The verbatim write and retrieval paths need no generative LLM calls. Optional extraction, consolidation, and answer/judge configurations have separate model requirements.
 
 Sharing across contributors within an organization/project is intended. Independent benchmark examples must use distinct explicit scopes. Source-record tags are supported; the separate entity-graph research variant is not packaged in this release.
 
 The Textual Add/Search evaluation adapter is implemented. Its presence does not establish public hosting, Agent Memory Leaderboard (AML) registration, organizer acceptance, or a leaderboard score. The local LoCoMo project-scope audit validates retrieval isolation, not answer accuracy or reproduction of the paper results.
 
 ## Documentation
+
+- [Object-store deployment](https://raw.githubusercontent.com/AIDAChip-Inc/mem-plus-plus/main/docs/object-store.md): Backend selection, chunked snapshots, concurrent publication, disposable caching, reader freshness and deployment examples.
 
 - [README](https://raw.githubusercontent.com/AIDAChip-Inc/mem-plus-plus/main/README.md): Installation, Python usage, configuration, Textual evaluation API, evaluation instructions, and reported results with context.
 - [Package metadata](https://raw.githubusercontent.com/AIDAChip-Inc/mem-plus-plus/main/pyproject.toml): Python requirements, dependencies, and optional extras.
