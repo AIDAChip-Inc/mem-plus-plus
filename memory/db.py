@@ -1,4 +1,4 @@
-"""Engine + session factory — a PLAIN local DSN from the environment.
+"""Default PostgreSQL factory, or opt-in independent object-store sessions.
 
 Production resolves its DSN through Railway/remote/1Password with self-heal,
 pool-reset, and retry. All of that is stripped here (this is a local research
@@ -33,14 +33,23 @@ def _dsn() -> str:
 def get_engine() -> Engine:
     """Process-wide lazy engine over the local DSN (no pool-reset machinery)."""
     global _engine
+    if os.environ.get("MEMORY_STORAGE_BACKEND", "postgres") == "object_store":
+        raise RuntimeError("Object-store sessions own disposable engines; use get_session(), not get_engine()")
     if _engine is None:
         _engine = create_engine(_dsn(), future=True, pool_pre_ping=True)
     return _engine
 
 
 def get_session() -> Session:
-    """A new ORM session bound to the local engine."""
+    """A new ORM session for the selected storage backend."""
     global _SessionLocal
+    backend = os.environ.get("MEMORY_STORAGE_BACKEND", "postgres")
+    if backend == "object_store":
+        from memory.snapshots import get_snapshot_session
+
+        return get_snapshot_session()
+    if backend != "postgres":
+        raise ValueError("MEMORY_STORAGE_BACKEND must be postgres or object_store")
     if _SessionLocal is None:
         _SessionLocal = sessionmaker(bind=get_engine(), expire_on_commit=True, future=True)
     return _SessionLocal()

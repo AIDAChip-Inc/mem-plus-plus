@@ -237,6 +237,15 @@ class PostgresMemoryStore:
         rows it produces carry no embedding at all, so they stay unusable by the
         vector leg even after the backend is fixed.
         """
+        if self.db.info.get("snapshot_backend"):
+            # SQLite carries the same original records, tags and vectors. Its
+            # lexical leg uses the existing graded term-overlap implementation.
+            if config.MEMORY_EMBEDDINGS_ENABLED and embed_source:
+                vector = get_embedding_service("memory").embed(embed_source)
+                if vector is None:
+                    raise RuntimeError("Snapshot write requires embeddings; retry when the embedder is available")
+                row.embedding = vector
+            return
         if not self._is_postgres:
             _warn_once(
                 "write_no_search_fields",
@@ -349,7 +358,9 @@ class PostgresMemoryStore:
         """
         base = (
             self.db.query(AgentMemory)
-            .options(defer(AgentMemory.embedding), lazyload(AgentMemory.tags))
+            .options(lazyload(AgentMemory.tags), *(
+                [] if self.db.info.get("snapshot_backend") else [defer(AgentMemory.embedding)]
+            ))
             .filter(*scope)
         )
 
@@ -579,7 +590,7 @@ class PostgresMemoryStore:
         gets ``last_used_at``/``salience``; ONLY relevance-matched rows accrue
         ``hit_count``/``last_hit_by``. ``refresh_instances`` re-SELECTs updated rows.
         """
-        if not plan:
+        if self.db.info.get("snapshot_reader") or not plan:
             return 0
         now = now or datetime.now(UTC)
         salience_by_id = {mem_id: sal for mem_id, sal, _ in plan}
@@ -620,6 +631,29 @@ class PostgresMemoryStore:
         """
         if not query or not query.strip():
             return []
+        if self.db.info.get("snapshot_backend"):
+            if not config.MEMORY_EMBEDDINGS_ENABLED:
+                return []
+            qvec = get_embedding_service("memory").embed(query, intent="query")
+            if qvec is None:
+                raise RuntimeError("Snapshot vector search requires an available embedder")
+            import numpy as np
+
+            vector = np.asarray(qvec, dtype=float)
+            norm = np.linalg.norm(vector)
+            if not np.isfinite(vector).all() or not norm:
+                raise ValueError("Invalid query embedding")
+            # Exact cosine over ALL eligible rows (never recency-truncated).
+            rows = base.filter(
+                AgentMemory.embedding.isnot(None)
+            ).all()
+            def similarity(row):
+                embedding = np.asarray(row.embedding, dtype=float)
+                denominator = np.linalg.norm(embedding) * norm
+                return float(embedding @ vector / denominator) if denominator else -1.0
+
+            rows.sort(key=lambda row: (-similarity(row), str(row.id)))
+            return rows[:_CANDIDATE_LIMIT]
         if not self._is_postgres:
             _warn_once(
                 "vector_leg_not_postgres",

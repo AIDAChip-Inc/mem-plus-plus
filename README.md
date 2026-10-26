@@ -85,6 +85,10 @@ Nothing is overwritten, so every version stays retrievable.
   conflict, a restatement or distinct. Originals are archived, not removed.
 - **Pluggable embeddings.** A local, CPU-only ONNX MiniLM-384 embedder by default, or OpenAI
   `text-embedding-3-small`.
+- **Optional object-store storage.** Disposable compute instances can share durable,
+  versioned snapshots in S3 or a compatible store, with one ingestion writer and many
+  read-only replicas. PostgreSQL remains the default. See the
+  [deployment guide](docs/object-store.md) for setup, consistency guarantees and search differences.
 
 **Where it fits**
 
@@ -131,6 +135,11 @@ The boxes in the figure follow one convention:
 > release.
 
 # Quickstart
+
+The instructions below use PostgreSQL. To run without a database service, use the
+optional [object-store snapshot backend](docs/object-store.md). It preserves records,
+scopes and history, with local lexical and exact vector search instead of PostgreSQL
+full-text search and pgvector ANN; existing benchmark scores do not describe this backend.
 
 | | Docker | Docker-free (macOS) |
 |---|---|---|

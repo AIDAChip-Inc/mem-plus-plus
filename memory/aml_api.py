@@ -1,7 +1,8 @@
 """Textual AML Add/Search adapter over Mem++ (no answering or extraction).
 
-Run ``python -m memory.aml_api`` with MEMORY_DATABASE_URL and a dedicated
-MEMORY_API_TOKEN. The CLI requires migrated PostgreSQL and local ONNX embeddings.
+Run ``python -m memory.aml_api`` with a storage configuration and a dedicated
+MEMORY_API_TOKEN. Storage is migrated PostgreSQL or opt-in object-store snapshots;
+both service profiles use local ONNX embeddings.
 Serve behind a TLS reverse proxy for remote evaluation; the default is loopback.
 """
 from __future__ import annotations
@@ -28,6 +29,7 @@ from memory.db import get_engine, get_session
 from memory.embeddings import get_embedding_service
 from memory.extraction import reconcile_tags
 from memory.models import AgentMemory, MemoryAPIRequest
+from memory.object_store import PublicationConflict
 from memory.store import PostgresMemoryStore, make_scope_key
 
 _NS = uuid.uuid5(uuid.NAMESPACE_DNS, "aml.mem-plus-plus.aidachip.com")
@@ -108,6 +110,8 @@ class AMLService:
 
         try:
             with self.sessions() as db:
+                if db.info.get("snapshot_reader"):
+                    raise APIError(403, "read-only replica; send ingestion to the writer")
                 if not check_existing(db):
                     # The PK serializes concurrent retries. Ledger and records are
                     # committed together, so a successful retry cannot be partial.
@@ -200,6 +204,8 @@ class AMLService:
             status = 200
         except APIError as exc:
             status, payload = exc.status, {"detail": exc.message}
+        except PublicationConflict:
+            status, payload = 409, {"detail": "snapshot publication conflict; retry the same request"}
         except Exception as exc:
             # Do not log SQL parameters, request content or authorization headers.
             logger.error("AML request failed (%s)", type(exc).__name__)
@@ -230,17 +236,22 @@ def main(argv=None, *, service_factory=AMLService, default_port=8787, descriptio
     parser.add_argument("--port", type=int, default=default_port)
     args = parser.parse_args(argv)
     service = service_factory(get_session, os.environ.get("MEMORY_API_TOKEN", ""))
-    if get_engine().dialect.name != "postgresql":
+    snapshots = os.environ.get("MEMORY_STORAGE_BACKEND", "postgres") == "object_store"
+    if not snapshots and get_engine().dialect.name != "postgresql":
         raise RuntimeError("AML service requires migrated PostgreSQL + pgvector")
     if config.MEMORY_EMBEDDING_BACKEND != "onnx" or not config.MEMORY_EMBEDDINGS_ENABLED:
         raise RuntimeError("This no-paid-inference service profile requires enabled ONNX embeddings")
     if not get_embedding_service("memory").warm_load():
         raise RuntimeError("Local embedding model unavailable")
     with get_session() as db:
-        dimension = db.execute(text("SELECT format_type(atttypid, atttypmod) FROM pg_attribute "
-                                    "WHERE attrelid='agent_memory'::regclass AND attname='embedding'"))
-        if dimension.scalar_one() != "vector(384)":
-            raise RuntimeError("AML service requires the 384-dimensional embedding schema")
+        if snapshots:
+            if not db.info["snapshot_reader"] and db.etag is None:
+                db.commit()  # publish an empty corpus before accepting readers
+        else:
+            dimension = db.execute(text("SELECT format_type(atttypid, atttypmod) FROM pg_attribute "
+                                        "WHERE attrelid='agent_memory'::regclass AND attname='embedding'"))
+            if dimension.scalar_one() != "vector(384)":
+                raise RuntimeError("AML service requires the 384-dimensional embedding schema")
         db.query(MemoryAPIRequest.id).limit(1).all()  # verify migration before serving
     with make_server(args.host, args.port, service, server_class=_Server,
                      handler_class=_Handler) as server:

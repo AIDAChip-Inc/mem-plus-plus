@@ -23,6 +23,8 @@ llm = ["anthropic>=0.86.0"]
 # models in the eval harness. Both import it lazily, so it stays optional.
 openai = ["openai>=3.2,<4"]
 test = ["pytest>=8.0", "pytest-cov>=5.0"]
+# Conditional S3 snapshot publication (also supports S3-compatible endpoints).
+object-store = ["boto3[crt]>=1.36,<2"]
 # Local chat demo (chat/): Gradio UI over the engine's per-turn hooks. Pulls the
 # `llm` extra (anthropic SDK) for reply generation (memory.llm.llm_call) rather
 # than re-pinning it.

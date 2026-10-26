@@ -1,0 +1,13 @@
+FROM ghcr.io/astral-sh/uv:0.11.21 AS uv
+FROM python:3.13-slim
+COPY --from=uv /uv /bin/uv
+WORKDIR /app
+COPY pyproject.toml uv.lock README.md LICENSE ./
+COPY memory ./memory
+RUN uv sync --frozen --no-dev --no-editable --extra object-store
+ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 HOME=/home/mempp HF_HOME=/home/mempp/.cache/huggingface
+RUN useradd --create-home --uid 10001 mempp
+USER mempp
+ENV MEMORY_STORAGE_BACKEND=object_store MEMORY_OBJECT_STORE_ROLE=reader
+EXPOSE 8787
+CMD ["python", "-m", "memory.aml_api", "--host", "0.0.0.0", "--port", "8787"]
