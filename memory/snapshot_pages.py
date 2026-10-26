@@ -11,7 +11,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from memory.object_store import PublicationConflict
+from memory.object_store import PublicationConflict, object_limit
 
 CHUNK_SIZE = 64 * 1024
 _cache: OrderedDict[tuple[str, str], bytes] = OrderedDict()
@@ -76,24 +76,30 @@ def remember(store, key, data):
             pass
 
 
-def immutable(store, key, expected):
+def immutable(store, key, expected, *, max_bytes=None):
+    limit = object_limit(max_bytes)
     with _lock:
         cache_key = (store.cache_key, key)
         data = _cache.get(cache_key)
         if data is not None:
             _cache.move_to_end(cache_key)
-    if data is not None and digest(data) == expected:
+    if data is not None and len(data) <= limit and digest(data) == expected:
         return data
     path = _disk_path(store, key)
     if path is not None:
         try:
-            data = path.read_bytes()
-            if digest(data) == expected:
+            # Caches are disposable and may be corrupt. Check size before any
+            # allocation, then bound the read even if another process replaces it.
+            if path.stat().st_size > limit:
+                raise OSError("Oversized disposable cache entry")
+            with path.open("rb") as stream:
+                data = stream.read(limit + 1)
+            if len(data) <= limit and digest(data) == expected:
                 remember(store, key, data)
                 return data
         except OSError:
             pass
-    obj = store.get(key)
+    obj = store.get(key, max_bytes=limit)
     if obj is None or digest(obj.data) != expected:
         raise ValueError("Published snapshot is missing or has an invalid checksum")
     remember(store, key, obj.data)
@@ -140,9 +146,20 @@ def load(store, profile):
             or any(not isinstance(h, str) or not re.fullmatch(r"[0-9a-f]{64}", h) for h in chunks)):
         raise ValueError("Invalid chunk manifest")
     size_check(size)
-    unique = list(dict.fromkeys(chunks))
+    sizes = {}
+    for index, sha in enumerate(chunks):
+        length = min(CHUNK_SIZE, size - index * CHUNK_SIZE)
+        if sha in sizes and sizes[sha] != length:
+            raise ValueError("Invalid chunk lengths in manifest")
+        sizes[sha] = length
+    unique = list(sizes)
+    def fetch(sha):
+        chunk = immutable(store, f"chunks/{sha}", sha, max_bytes=sizes[sha])
+        if len(chunk) != sizes[sha]:
+            raise ValueError("Invalid chunk length")
+        return chunk
     with ThreadPoolExecutor(max_workers=min(16, len(unique))) as pool:
-        loaded = dict(zip(unique, pool.map(lambda h: immutable(store, f"chunks/{h}", h), unique)))
+        loaded = dict(zip(unique, pool.map(fetch, unique)))
     data = b"".join(loaded[h] for h in chunks)
     if len(data) != size:
         raise ValueError("Invalid snapshot size")

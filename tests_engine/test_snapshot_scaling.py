@@ -98,9 +98,9 @@ def test_chunk_reuse_and_warm_reader_transfer_volume(objects, monkeypatch):
     def counted_put(key, data, **kwargs):
         uploaded.append((key, len(data)))
         return put(key, data, **kwargs)
-    def counted_get(key):
+    def counted_get(key, **kwargs):
         downloaded.append(key)
-        return get(key)
+        return get(key, **kwargs)
     monkeypatch.setattr(objects, "put", counted_put)
     monkeypatch.setattr(objects, "get", counted_get)
     with SnapshotSession(objects) as reader:
@@ -122,9 +122,9 @@ def test_disk_cache_survives_process_cache_loss_and_corruption(objects, monkeypa
         write(writer)
     reset_cache()
     get = objects.get
-    def pointer_only(key):
+    def pointer_only(key, **kwargs):
         assert key == "latest.json", "unchanged immutable objects should come from disk cache"
-        return get(key)
+        return get(key, **kwargs)
     monkeypatch.setattr(objects, "get", pointer_only)
     with SnapshotSession(objects) as reader:
         assert reader.query(AgentMemory).count() == 1
@@ -134,9 +134,9 @@ from memory.object_store import FileObjectStore, open_object_store
 from memory.snapshots import SnapshotSession
 import sys
 get = FileObjectStore.get
-def pointer_only(self, key):
+def pointer_only(self, key, **kwargs):
     assert key == 'latest.json', key
-    return get(self, key)
+    return get(self, key, **kwargs)
 FileObjectStore.get = pointer_only
 with SnapshotSession(open_object_store(sys.argv[1])) as reader:
     assert reader.query(AgentMemory).count() == 1
@@ -166,6 +166,41 @@ def test_legacy_snapshot_read_and_upgrade(objects):
     assert json.loads(objects.get("latest.json").data)["format"] == 2
     with SnapshotSession(objects) as reader:
         assert reader.query(AgentMemory).count() == 2
+
+
+def test_oversized_sparse_cache_entry_is_ignored(objects, monkeypatch, tmp_path):
+    from memory.snapshot_pages import _disk_path
+
+    monkeypatch.setenv("MEMORY_OBJECT_STORE_CACHE_DIR", str(tmp_path / "cache"))
+    with SnapshotSession(objects, writer=True) as writer:
+        write(writer)
+    pointer = json.loads(objects.get("latest.json").data)
+    index = json.loads(objects.get(f"manifests/{pointer['sha256']}.json").data)
+    path = _disk_path(objects, f"chunks/{index['chunks'][0]}")
+    with path.open("wb") as stream:
+        stream.truncate(2 * 1024**3)  # sparse corruption; must not allocate/read 2 GiB
+    reset_cache()
+    with SnapshotSession(objects) as reader:
+        assert reader.query(AgentMemory).count() == 1
+    assert path.stat().st_size <= 64 * 1024
+
+
+@pytest.mark.parametrize("repeated", [False, True])
+def test_bad_individual_chunk_lengths_fail_before_assembly(objects, repeated):
+    from memory.snapshot_pages import CHUNK_SIZE, encoded
+
+    chunk = b"x" * CHUNK_SIZE
+    sha = digest(chunk)
+    objects.put(f"chunks/{sha}", chunk)
+    index = encoded({"format": 2, "embedding": _profile(), "chunk_size": CHUNK_SIZE,
+                     "size": CHUNK_SIZE + 1 if repeated else 1,
+                     "chunks": [sha, sha] if repeated else [sha]})
+    root = digest(index)
+    objects.put(f"manifests/{root}.json", index)
+    objects.put("latest.json", encoded({"format": 2, "embedding": _profile(), "sha256": root}))
+    reset_cache()
+    with pytest.raises(ValueError, match="length|byte limit"):
+        SnapshotSession(objects)
 
 
 def test_operator_size_limit_is_optional_and_enforced(objects, monkeypatch):

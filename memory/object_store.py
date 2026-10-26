@@ -14,6 +14,13 @@ class PublicationConflict(RuntimeError):
     """Another writer published first. Close the session and retry from latest."""
 
 
+def object_limit(max_bytes: int | None = None) -> int:
+    limit = int(os.environ.get("MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES", str(1024**3)))
+    if limit <= 0 or (max_bytes is not None and max_bytes <= 0):
+        raise ValueError("Object byte limits must be positive")
+    return min(limit, max_bytes) if max_bytes is not None else limit
+
+
 @dataclass(frozen=True)
 class Object:
     data: bytes
@@ -29,7 +36,7 @@ class ObjectStore(Protocol):
 
     cache_key: str
 
-    def get(self, key: str) -> Object | None: ...
+    def get(self, key: str, *, max_bytes: int | None = None) -> Object | None: ...
 
     def put(self, key: str, data: bytes, *, expected: str | None = None) -> str: ...
 
@@ -52,9 +59,16 @@ class FileObjectStore:
             raise ValueError("Object key must stay within the configured directory")
         return path
 
-    def get(self, key: str) -> Object | None:
+    def get(self, key: str, *, max_bytes: int | None = None) -> Object | None:
+        limit = object_limit(max_bytes)
         try:
-            data = self._path(key).read_bytes()
+            path = self._path(key)
+            if path.stat().st_size > limit:
+                raise ValueError("Object exceeds its byte limit")
+            with path.open("rb") as stream:
+                data = stream.read(limit + 1)
+            if len(data) > limit:
+                raise ValueError("Object exceeds its byte limit")
         except FileNotFoundError:
             return None
         return Object(data, hashlib.sha256(data).hexdigest())
@@ -105,7 +119,7 @@ class S3ObjectStore:
     def _key(self, key: str) -> str:
         return f"{self.prefix}/{key}" if self.prefix else key
 
-    def get(self, key: str) -> Object | None:
+    def get(self, key: str, *, max_bytes: int | None = None) -> Object | None:
         from botocore.exceptions import ClientError
 
         try:
@@ -117,9 +131,7 @@ class S3ObjectStore:
         body = response["Body"]
         try:
             # Bound allocations even for a corrupt/untrusted remote object.
-            limit = int(os.environ.get("MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES", str(1024**3)))
-            if limit <= 0:
-                raise ValueError("MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES must be positive")
+            limit = object_limit(max_bytes)
             if response["ContentLength"] > limit:
                 raise ValueError("Object exceeds MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES")
             data = body.read(limit + 1)

@@ -69,7 +69,7 @@ Additional controls:
 | `MEMORY_OBJECT_STORE_CACHE_DIR` | unset | Optional disposable disk cache, namespaced by store location |
 | `MEMORY_OBJECT_STORE_MAX_BYTES` | `0` | Maximum serialized corpus bytes; 0 means no application cap |
 | `MEMORY_OBJECT_STORE_WRITE_RETRIES` | `8` | Maximum optimistic publication attempts |
-| `MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES` | `1073741824` | S3 GET allocation guard for one object; independent of corpus size |
+| `MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES` | `1073741824` | Allocation guard for a single object/cache read; independent of corpus size |
 
 New snapshots use 64 KiB chunks, so the individual-object guard does not limit
 corpus size. Raising the corpus budget cannot create more instance memory: size
@@ -115,6 +115,12 @@ prefixes/credentials. The local chunk cache contains corpus data, so restrict
 its directory permissions and use encrypted ephemeral storage when appropriate.
 The embedding-model cache is also disposable; cold instances may download the
 model from Hugging Face.
+
+The optional disk cache has no built-in eviction. Prune or replace its directory
+externally, or place it on a volume with a managed size/lifetime. Cached files can
+be deleted without changing durable memory; misses are refetched. Cache-write
+failures (including a full volume) do not fail publication, but increase remote
+reads. The process memory cache has the separate budget listed above.
 
 ## HTTP/container deployment
 

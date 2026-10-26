@@ -208,6 +208,24 @@ with SnapshotSession(open_object_store(sys.argv[1])) as reader:
     subprocess.run([sys.executable, "-c", code, objects.root.as_uri()], check=True, capture_output=True)
 
 
+def test_first_write_savepoint_is_rolled_back_with_outer_transaction(objects):
+    with SnapshotSession(objects, writer=True) as session:
+        session.commit()
+    old = objects.get("latest.json")
+    with SnapshotSession(objects, writer=True) as session:
+        with pytest.raises(ValueError, match="abort outer"):
+            with session.begin():
+                with session.begin_nested():
+                    session.add(AgentMemory(user_id=uuid.UUID(int=1), agent_type="assistant",
+                                            content="aborted nested write"))
+                raise ValueError("abort outer")
+        assert session.query(AgentMemory).count() == 0
+        assert objects.get("latest.json") == old
+        write(session, "successful unrelated commit")
+    with SnapshotSession(objects) as reader:
+        assert reader.query(AgentMemory).one().content == "successful unrelated commit"
+
+
 def test_source_retry_and_embedding_failure(objects, monkeypatch):
     source = uuid.uuid4()
     with SnapshotSession(objects, writer=True) as session:
@@ -382,4 +400,9 @@ def test_s3_wire_protocol_and_error_propagation():
         stub.add_response("get_object", {"Body": body, "ETag": '"two"', "ContentLength": 2})
         assert store.get("latest.json").data == b"db"
         assert body.closed
+        oversized = io.BytesIO(b"x" * 100)
+        stub.add_response("get_object", {"Body": oversized, "ETag": '"large"', "ContentLength": 100})
+        with pytest.raises(ValueError, match="MAX_OBJECT_BYTES"):
+            store.get("chunk", max_bytes=10)
+        assert oversized.closed
         stub.assert_no_pending_responses()

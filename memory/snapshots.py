@@ -25,6 +25,17 @@ def _profile() -> dict:
             "model": config.EMBEDDING_MODEL, "dimensions": config.EMBEDDING_DIM}
 
 
+def _sqlite_connect(connection, record):
+    # Let SQLAlchemy control BEGIN. Legacy sqlite3 mode otherwise treats a first
+    # SAVEPOINT as the outer transaction and RELEASE survives an outer rollback.
+    connection.isolation_level = None
+    connection.execute("PRAGMA foreign_keys=ON")
+
+
+def _sqlite_begin(connection):
+    connection.exec_driver_sql("BEGIN")
+
+
 class SnapshotSession(Session):
     def __init__(self, objects: ObjectStore, *, writer: bool = False):
         if config.EMBEDDING_DIM != 384:
@@ -34,6 +45,8 @@ class SnapshotSession(Session):
         self.failed = False
         self.etag = None
         self.snapshot_engine = create_engine("sqlite://", poolclass=StaticPool)
+        event.listen(self.snapshot_engine, "connect", _sqlite_connect)
+        event.listen(self.snapshot_engine, "begin", _sqlite_begin)
         try:
             data, self.etag, self.known_chunks = load(objects, _profile())
             with self.snapshot_engine.connect() as conn:
