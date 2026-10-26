@@ -86,8 +86,8 @@ Nothing is overwritten, so every version stays retrievable.
 - **Pluggable embeddings.** A local, CPU-only ONNX MiniLM-384 embedder by default, or OpenAI
   `text-embedding-3-small`.
 - **Optional object-store storage.** Disposable compute instances can share durable,
-  versioned snapshots in S3 or a compatible store, with one ingestion writer and many
-  read-only replicas. PostgreSQL remains the default. See the
+  chunked snapshots in S3 or a compatible store, with concurrent ingestion writers,
+  incremental transfers and disposable reader caches. PostgreSQL remains the default. See the
   [deployment guide](docs/object-store.md) for setup, consistency guarantees and search differences.
 
 **Where it fits**

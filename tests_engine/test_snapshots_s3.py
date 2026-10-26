@@ -1,6 +1,8 @@
 """Opt-in S3 contract test; creates/deletes ONLY its own random object prefix."""
 import os
 import uuid
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -27,7 +29,6 @@ def live_store():
 
 def test_live_s3_publication_restart_and_conflict(live_store, monkeypatch):
     from memory.models import AgentMemory
-    from memory.object_store import PublicationConflict
     from memory.snapshots import SnapshotSession
     from test_snapshots import Embedder, write
 
@@ -35,15 +36,14 @@ def test_live_s3_publication_restart_and_conflict(live_store, monkeypatch):
     monkeypatch.setattr("memory.store.get_embedding_service", lambda _: Embedder())
     with SnapshotSession(store, writer=True) as first, SnapshotSession(store, writer=True) as stale:
         write(first, "durable original")
-        with pytest.raises(PublicationConflict):
-            write(stale, "rejected stale write")
-    with SnapshotSession(store) as reader:
-        assert reader.query(AgentMemory).one().content == "durable original"
-        with SnapshotSession(store, writer=True) as writer:
-            write(writer, "next published version")
-        assert reader.query(AgentMemory).count() == 1
+        write(stale, "independent concurrent write")
     with SnapshotSession(store) as reader:
         assert reader.query(AgentMemory).count() == 2
+        with SnapshotSession(store, writer=True) as writer:
+            write(writer, "next published version")
+        assert reader.query(AgentMemory).count() == 2
+    with SnapshotSession(store) as reader:
+        assert reader.query(AgentMemory).count() == 3
 
 
 def test_live_s3_with_real_embeddings_and_atomic_http_receipt(live_store):
@@ -72,3 +72,31 @@ def test_live_s3_with_real_embeddings_and_atomic_http_receipt(live_store):
     row = next(row for row in result["data"] if "automobile" in row["content"])
     assert row["created_at"] == "2026-01-01T00:00:00+00:00"
     assert reader.search(SearchRequest(user_id="team-b", query="Where is the car?", top_k=2)) == {"data": []}
+
+
+def test_live_s3_parallel_writers_and_conflicting_edits(live_store, monkeypatch):
+    from memory.models import AgentMemory, MemoryTag
+    from memory.object_store import PublicationConflict
+    from memory.snapshots import SnapshotSession
+    from test_snapshots import Embedder, write
+
+    monkeypatch.setattr("memory.store.get_embedding_service", lambda _: Embedder())
+    barrier = threading.Barrier(4)
+    def ingest(index):
+        with SnapshotSession(live_store, writer=True) as writer:
+            barrier.wait(timeout=30)
+            write(writer, f"concurrent {index}", tags=["shared"])
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(ingest, range(4)))
+    with SnapshotSession(live_store) as reader:
+        assert reader.query(AgentMemory).count() == 4
+        assert reader.query(MemoryTag).count() == 1
+        memory_id = reader.query(AgentMemory).first().id
+    with SnapshotSession(live_store, writer=True) as first, SnapshotSession(live_store, writer=True) as stale:
+        first.get(AgentMemory, memory_id).context_summary = "preserved winner"
+        stale.get(AgentMemory, memory_id).context_summary = "rejected conflict"
+        first.commit()
+        with pytest.raises(PublicationConflict):
+            stale.commit()
+    with SnapshotSession(live_store) as reader:
+        assert reader.get(AgentMemory, memory_id).context_summary == "preserved winner"

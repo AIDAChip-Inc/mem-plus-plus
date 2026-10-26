@@ -1,29 +1,35 @@
 # Object-store-backed Mem++
 
 This optional backend addresses [issue #21](https://github.com/AIDAChip-Inc/mem-plus-plus/issues/21).
-It keeps the corpus outside compute instances, so a writer or reader can restart on
-a fresh container without losing acknowledged memory. PostgreSQL + pgvector remains
-the default and is recommended for large corpora, frequent writes, or high query volume.
+It keeps organizational memory outside compute instances, allowing disposable
+containers, concurrent ingestion writers and read-only replicas without operating
+PostgreSQL. PostgreSQL + pgvector remains the default and is recommended when
+large-corpus search latency or transactional throughput matters most.
 
 ## What this adds
 
-- S3 and S3-compatible object stores through the normal AWS credential chain.
-- Immutable, content-addressed SQLite snapshots and a conditionally updated publication pointer.
-- One ingestion writer, many read-only replicas, disposable in-memory databases.
-- The existing Python recall/write, browse, supersede, merge and consolidation APIs.
-- The authenticated `/add` and `/search` HTTP service, including durable request receipts.
-- A filesystem adapter for local development or a volume with POSIX locking, atomic
-  rename and fsync guarantees. Generic object-backed/FUSE mounts are **not** assumed
-  to satisfy those guarantees. Access those stores directly through the S3 adapter.
+- S3 or S3-compatible object storage and a POSIX filesystem adapter.
+- Immutable, content-addressed SQLite chunks and versioned manifests, published
+  through an ETag-conditional `latest.json` pointer.
+- Concurrent writers: independent record changes automatically rebase onto the
+  newest published version; incompatible edits to the same row are rejected.
+- Incremental transfers: commits upload changed chunks; readers reuse verified
+  immutable chunks in disposable memory/disk caches.
+- No fixed application-level corpus size cap. An optional operator budget can
+  bound memory use; the current search engine still needs the corpus in memory.
+- The existing Python recall/write, browse, supersede, merge and consolidation
+  APIs, plus the authenticated `/add` and `/search` HTTP service.
 
-This reduces the infrastructure needed for smaller organizational assistants and
-batch/task deployments: durable memory no longer requires an operated PostgreSQL
-service or an irreplaceable local volume. Replicas share a corpus by using the same
-bucket prefix. Retained snapshots also make versions portable and recoverable.
-It does not guarantee lower cost or better latency than PostgreSQL: each session
-downloads a whole snapshot, and each writer commit uploads a whole new snapshot.
+Records, source/event timestamps, contributor tags, project scopes, embeddings,
+supersession/merge relations, consolidation runs and HTTP request receipts share
+one consistent published version. No generative LLM is called for verbatim ingest.
 
-## Configure a backend
+This removes a database-service dependency for smaller organizational assistants,
+ephemeral tasks and portable deployments. Chunk reuse reduces repeated network
+traffic and retained snapshot storage. It does not guarantee lower cost or faster
+search than PostgreSQL, and cold readers still need to load a complete corpus.
+
+## Configuration
 
 ```bash
 uv sync --extra object-store
@@ -33,35 +39,49 @@ export MEMORY_OBJECT_STORE_ROLE=writer
 export MEMORY_USER=alice
 ```
 
-Use an existing private bucket. Configure AWS credentials with your normal AWS
-profile, workload role, or environment. No credentials belong in the URI or source
-files. The extra includes the AWS CRT dependency needed by AWS login profiles.
-For a compatible service, additionally set `MEMORY_S3_ENDPOINT_URL` to its endpoint
-and configure its credentials/region through the AWS SDK environment.
+Use a private bucket and your normal AWS profile, workload role or credential
+configuration. The extra includes AWS CRT for AWS login profiles. Credentials do
+not belong in the URI or source files. For a compatible service, additionally set
+`MEMORY_S3_ENDPOINT_URL` and configure its region/credentials through the AWS SDK.
 
-The service must implement conditional `PutObject` with both `If-Match` and
-`If-None-Match`, atomic object replacement, and read-after-write consistency. These
-are requirements, not optional optimizations. There is no unconditional-write
-fallback when a compatible endpoint does not support them. See
+The object store must provide atomic replacement, read-after-write consistency,
+and conditional `PutObject` with both `If-Match` and `If-None-Match`. There is no
+unsafe unconditional-write fallback. See
 [S3 conditional writes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html).
 
-For a local test, replace the URI with `file:///absolute/path/to/corpus`. This
-directory is durable state, not a disposable cache. Do not share a live SQLite
-database on a mount: the adapter writes immutable snapshots and publishes pointers.
-The filesystem adapter requires POSIX and is not available on native Windows.
+For local development or a suitable shared volume, use
+`file:///absolute/path/to/corpus`. This directory is durable state, not a cache.
+The filesystem adapter requires POSIX `flock`, atomic rename and fsync. Generic
+S3/FUSE mounts are not assumed to provide those guarantees; use the S3 adapter
+for those object stores. Native Windows does not support the POSIX adapter.
 
-Unset `MEMORY_STORAGE_BACKEND`, or set it to `postgres`, to use the existing
-`MEMORY_DATABASE_URL` configuration. A backend switch selects a separate corpus;
-this release does not migrate an existing PostgreSQL corpus automatically.
+Unset `MEMORY_STORAGE_BACKEND`, or set it to `postgres`, for the existing
+`MEMORY_DATABASE_URL` backend. Switching backends selects a separate corpus; no
+PostgreSQL corpus migration is performed automatically. Existing format-1 object
+snapshots remain readable and upgrade to chunked format 2 on the next writer commit.
 
-## Minimal Python example
+Additional controls:
 
-Run ingestion once with the writer environment above:
+| Variable | Default | Meaning |
+|---|---|---|
+| `MEMORY_OBJECT_STORE_ROLE` | `reader` | `reader` or `writer`; readers cannot ingest |
+| `MEMORY_OBJECT_STORE_CACHE_BYTES` | `67108864` | Shared process memory cache budget; 0 disables it |
+| `MEMORY_OBJECT_STORE_CACHE_DIR` | unset | Optional disposable disk cache, namespaced by store location |
+| `MEMORY_OBJECT_STORE_MAX_BYTES` | `0` | Maximum serialized corpus bytes; 0 means no application cap |
+| `MEMORY_OBJECT_STORE_WRITE_RETRIES` | `8` | Maximum optimistic publication attempts |
+| `MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES` | `1073741824` | S3 GET allocation guard for one object; independent of corpus size |
+
+New snapshots use 64 KiB chunks, so the individual-object guard does not limit
+corpus size. Raising the corpus budget cannot create more instance memory: size
+instances for the full corpus, SQLite, query results and serialization/rebase work.
+
+## Python example
+
+Ingest with writer configuration:
 
 ```bash
 uv run --extra object-store python - <<'PY'
 from memory import store_facts_verbatim
-
 print(store_facts_verbatim("assistant", [{
     "summary": "Project Atlas approved the revised launch plan.",
     "tags": ["atlas", "launch"],
@@ -70,41 +90,33 @@ print(store_facts_verbatim("assistant", [{
 PY
 ```
 
-On a fresh instance with the same URI, credentials and contributor identity:
+Query on another instance with the same URI and identity:
 
 ```bash
 export MEMORY_OBJECT_STORE_ROLE=reader
+# Optional, particularly for corpora larger than the memory cache:
+export MEMORY_OBJECT_STORE_CACHE_DIR=/tmp/mempp-cache
 uv run --extra object-store python - <<'PY'
 from memory import recall_facts
 print(recall_facts("assistant", "What is the Atlas launch plan?"))
 PY
 ```
 
-There is no persistent local database to copy. The embedding model may download on
-first use; its local cache is disposable. Use the existing `project_scope(...)`
-context for explicit project/customer scopes. Contributor identity, project
-sharing and source tags retain their existing behavior; a scope selector is not
-authentication. Separate trust domains should use distinct prefixes and credentials.
+Readers fail clearly if there is no publication; initialize a writer first. A
+writer can initialize an empty corpus with `get_session().commit()` inside a
+session context. Direct ORM users can use `session.commit()` or
+`with session.begin():`; releasing a savepoint does not publish before its outer
+transaction commits. Use `get_session()` rather than a process-wide `get_engine()`.
+Benchmark adapters that explicitly require PostgreSQL still require PostgreSQL.
 
-Reader is the default role. A missing publication is an error for readers; initialize
-the writer first. Writer ingestion commits publish automatically. Direct ORM users
-must commit with `session.commit()` or a `with session.begin():` block:
+Use the existing `project_scope(...)` context for explicit project/customer
+scopes. Scopes are not authentication. Separate trust domains need separate
+prefixes/credentials. The local chunk cache contains corpus data, so restrict
+its directory permissions and use encrypted ephemeral storage when appropriate.
+The embedding-model cache is also disposable; cold instances may download the
+model from Hugging Face.
 
-```python
-from memory.db import get_session
-
-# In writer mode, this also initializes an empty corpus for readers.
-with get_session() as session:
-    session.commit()
-```
-
-Use `get_session()` for this backend. A process-wide `get_engine()` cannot represent
-independent published snapshots and is intentionally rejected. Benchmark-specific
-integrations that explicitly require PostgreSQL still require PostgreSQL.
-
-## HTTP deployment
-
-Use the existing authenticated evidence API with the same storage configuration:
+## HTTP/container deployment
 
 ```bash
 export MEMORY_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
@@ -112,15 +124,12 @@ export MEMORY_OBJECT_STORE_ROLE=writer
 uv run --extra object-store python -m memory.aml_api --host 127.0.0.1 --port 8787
 ```
 
-Writer startup publishes an empty corpus if needed. Start reader replicas after
-that, with the same URI and `MEMORY_OBJECT_STORE_ROLE=reader`. `/search` and
-`/health` work on replicas; `/add` returns 403. Route all ingestion to the writer.
-Successful `/add` responses cover the entire request, including its idempotency
-receipt. Retry a 409 publication conflict with the **same** request ID and payload;
-reuse with a different payload is rejected. Network/server failures may have an
-unknown outcome, so use the same retry rule for those failures too.
-
-For containers:
+Writer startup initializes an empty corpus when necessary. Multiple writer
+instances may share a prefix. Reader replicas use `ROLE=reader`; `/search` and
+`/health` work, while `/add` returns 403. Successful `/add` responses cover all
+records in the request and its durable idempotency receipt. Retry a 409 or an
+unknown network outcome with the same request ID and payload. Reusing an ID with
+a changed payload is rejected.
 
 ```bash
 docker build -f Dockerfile.snapshots -t mempp-snapshots .
@@ -130,122 +139,117 @@ docker run --rm -p 127.0.0.1:8787:8787 \
   mempp-snapshots
 ```
 
-Supply credentials through your platform's workload role or inject its AWS
-credential configuration at runtime. The image defaults to reader mode. It needs
-network access to object storage and, on a cold model cache, Hugging Face. For
-remote clients, put the HTTP service behind your authenticated TLS ingress as
-with the PostgreSQL deployment. No database container or durable compute volume
-is required. Reader replicas use the same image with `ROLE=reader`.
+Supply AWS credentials through a workload role or runtime credential
+configuration. The image defaults to reader mode. Optional local caches can be
+removed on every restart. Remote clients should use your authenticated TLS ingress
+as with the PostgreSQL deployment. No durable compute volume is required.
 
-## Publication, durability and freshness
-
-Objects under a configured prefix are:
+## Publication, concurrency and recovery
 
 ```text
-latest.json                     # format, embedding profile, SHA-256 of snapshot
-snapshots/<sha256>.sqlite        # full immutable corpus + SQL indexes + vectors
+latest.json                       # current format/profile/manifest hash
+manifests/<sha256>.json            # immutable ordered chunk hashes + size/profile
+chunks/<sha256>                    # immutable SQLite byte chunks
+snapshots/<sha256>.sqlite          # legacy format-1 objects, if present
 ```
 
-1. A session reads `latest.json` once, then downloads and verifies that snapshot.
-   It uses a private, in-memory SQLite database for the entire session.
-2. On commit, the writer uploads the complete new snapshot with a create-only
-   conditional PUT. The snapshot includes original text, event times, attribution,
-   all scope/provenance columns, tags, embeddings, supersession/merge relations,
-  consolidation run history and HTTP idempotency receipts.
-  Timestamps and query bounds are normalized to UTC, preserving instants even
-  when incoming timestamps contain nonzero offsets (naive inputs mean UTC).
-3. Only after that upload succeeds does the writer replace `latest.json`, requiring
-   the ETag it originally read. Initial publication requires the pointer not to exist.
-4. Success is acknowledged only after publication succeeds. An upload failure
-   leaves the old version authoritative. A stale writer receives
-   `PublicationConflict` (HTTP 409) and cannot overwrite the winner. Close a failed
-   session and repeat the operation in a new session; never reuse its local state.
+Each session reads `latest.json` from the store, verifies the immutable manifest
+and chunks, and opens an independent in-memory SQLite database. Up to 16 chunk
+fetches run in parallel on a cold load. Unchanged warm sessions fetch only the
+pointer; immutable data comes from the process/disk cache. A corrupt cached object
+is discarded/refetched, and the entire cache can be lost without losing memory.
+A cold restart without a cache still downloads the full corpus.
 
-There is deliberately no distributed lock service or multiwriter merge protocol.
-Operate one ingestion writer and serialize its work. Conditional publication also
-protects against accidentally overlapping writers, but requires callers to retry
-conflicts. The public `store_facts_verbatim` API retains its existing in-scope
-exact-summary deduplication. A list passed to that API commits each fact separately;
-it is not an atomic batch. The HTTP API publishes a complete request in one commit.
+On commit the writer splits its serialized database into chunks, uploads only
+hashes absent from its known published chunks, then uploads an immutable manifest.
+Only afterward does it conditionally replace the pointer using the ETag originally
+read. Success is acknowledged after pointer publication succeeds. Interrupted
+uploads cannot expose a partial version. Timestamps and query bounds are normalized
+to UTC so offset-bearing inputs retain their event instants.
 
-An acknowledgement lost after publication has an unknown outcome to the caller.
-The durable request receipt (HTTP), source-message identity (store API), or existing
-summary deduplication (verbatim API) makes retries of the same input idempotent.
-Arbitrary manual mutation operations are not made exactly-once by this backend.
+If another writer published first, the losing writer reloads the latest version
+and performs a three-way merge against its original base. Independent inserts and
+edits to different rows are preserved. Tags use deterministic scoped IDs, so
+concurrent inserts of the same tag share one registry entry. Source-ID writes and
+identical HTTP receipts recognize retries instead of duplicating records.
+Conflicting edits/deletes to the same row, incompatible receipt payloads, or merges
+that would break unique/foreign-key constraints raise `PublicationConflict` (HTTP
+409). No last-write-wins replacement is used. After the configured retry budget is
+exhausted, close the failed session and repeat the operation in a fresh session.
 
-Readers are pinned to one version until their session closes. A newly opened
-session sees the latest successfully published pointer under the object store's
-consistency guarantees. A concurrent publish may leave an already-open reader on
-the previous complete version, never a mixture. Every public API invocation opens
-a fresh session; there is no background cache invalidation or freshness interval.
-Failures to fetch a published object fail the operation rather than substituting
-an empty/stale corpus. The whole database lives in memory and can be discarded at
-any time. There are no irreplaceable local caches.
+This is optimistic row-level conflict detection, not serializable predicate
+locking. Cross-record business invariants still need application coordination.
+High contention can return retryable conflicts. The public verbatim API retains
+its in-scope exact-summary retry deduplication, but concurrent callers without a
+shared source/request identity can create equivalent independent records. For
+cross-writer exactly-once ingestion, use the HTTP request ID or a store source ID.
+Verbatim lists commit per fact; HTTP request batches commit atomically. Arbitrary
+manual mutations are not made exactly-once by this backend.
 
-Unpublished snapshots can remain after failed publications. Published older
-snapshots also remain for recovery; this release does not garbage-collect them.
-Plan a retention policy that keeps the current snapshot and any versions required
-by live readers. Do not apply independent short object expiration to `snapshots/`:
-it could delete the still-current corpus. S3 bucket versioning is recommended for
-recovering older pointer versions. Bucket durability, encryption and retention
-settings determine durability beyond successful object-store acknowledgements.
+A reader stays pinned to one complete version until its session closes. Newly
+opened sessions observe the latest pointer under the store's consistency guarantees;
+there is no stale-pointer cache or background invalidation interval. A valid cached
+immutable object need not be fetched again. If a required uncached durable object
+is missing, corrupt or inaccessible, the operation fails instead of falling back
+to an empty/stale corpus.
 
-For recovery, stop ingestion, obtain a known-good retained snapshot and its matching
-manifest/profile, and restore the pointer with an ETag-conditional update. Never
-restore using an unconditional overwrite while ingestion is running. Snapshot
-checksums detect accidental corruption, not a malicious writer with bucket access.
+All manifests/chunks are retained, including possible orphan objects after failed
+publications. There is no automatic garbage collection. A retention job must trace
+all versions it intends to keep, including versions used by live readers, before
+removing unreferenced chunks. Age-based chunk expiration alone is unsafe: a current
+version may still reference very old chunks. S3 bucket versioning is useful for
+pointer recovery. To restore, stop ingestion and conditionally republish the pointer
+to a known-good retained manifest/profile. Checksums detect accidental corruption,
+not malicious writers. Bucket encryption, retention and durability settings still apply.
 
-## Retrieval differences and current limits
+## Search behavior and remaining resource costs
 
-| Capability | PostgreSQL (default) | Object-store snapshots v1 |
+| Capability | PostgreSQL default | Object-store backend |
 |---|---|---|
-| Original rows, attribution, scopes, audit relations | Existing schema | Same schema, preserved in each version |
-| Lexical recall | PostgreSQL English full-text / cover-density rank | Existing case-insensitive substring candidates, graded query-term overlap; no stemming or PostgreSQL full-text operators |
-| Semantic recall | pgvector ANN | Exact cosine scan over every eligible embedded row |
-| Tags, weighted RRF, event-time filter, recent-evidence slots | Existing engine | Same pipeline and scope/time predicates |
-| Semantic browse UI | pgvector order | Existing SQLite lexical fallback; semantic ranking is supported in **recall**, not browse |
-| Hit statistics | Durable updates | Readers do not write hits/salience; writer sessions can persist them |
-| Write concurrency | Database transactions | One ingestion writer; conflicting publication rejected |
-| Snapshot size / embeddings | Database configuration | Maximum 256 MiB, 384-dimensional schema only |
-| Query/commit cost | Indexed database work | Entire snapshot GET per session, local scans, entire snapshot PUT per commit |
+| Records, scopes, attribution, provenance | Existing schema | Same schema across published versions |
+| Lexical recall | English full-text / cover-density rank | Graded case-insensitive substring/term overlap, without PostgreSQL stemming/operators |
+| Semantic recall | pgvector ANN | Exact cosine scan over eligible embedded records |
+| Tags, weighted RRF, time filters, recent slots | Existing engine | Same scope/time predicates and pipeline |
+| Semantic browse | pgvector ordering | Existing SQLite lexical fallback; semantic **recall** is supported |
+| Hit statistics | Durable updates | Readers do not write statistics; writers can persist them |
+| Write concurrency | Database transactions | Automatic merge of independent row changes; incompatible changes conflict |
+| Network transfers | Database protocol | Changed chunks on writes, missing chunks on reads |
+| Corpus limit | Database resources | No fixed application cap; instance memory and operator budget apply |
 
-The snapshot format records its embedding model/backend/dimension profile and
-rejects a mismatched profile. Enabled embeddings must be available for writes and
-vector queries; those failures raise instead of silently disabling the semantic
-leg. Explicit `MEMORY_EMBEDDINGS_ENABLED=0` is still an intentional ablation; such
-rows have no vectors and need backfilling/re-ingestion before semantic retrieval.
+The current schema requires 384-dimensional embeddings. Snapshot profiles record
+model/backend/dimensions and reject mismatches. Enabled embeddings must be available;
+write/query failures do not silently drop the semantic leg. Explicit
+`MEMORY_EMBEDDINGS_ENABLED=0` remains an intentional ablation whose records need
+backfilling/re-ingestion before semantic retrieval.
 
-All data plus query work must fit comfortably in instance memory; allow substantial
-headroom beyond snapshot size for deserialization, ORM objects and embeddings.
-Snapshots persist SQL indexes and embedding values, but this v1 has no separate
-full-text inverted index or ANN index. It prioritizes portability and correctness
-for small corpora over throughput. Benchmark results published for PostgreSQL do
-not transfer to this different lexical ranker, and reader-only hit behavior can
-also change ranking across repeated queries. S3 Vectors is not used in v1.
+Chunking removes whole-corpus network transfers for warm readers/small writes,
+but sessions still deserialize the full corpus and serialize it on commit. A
+concurrent rebase scans base/changed/latest rows and needs additional memory.
+Local lexical/vector work still scans eligible records. There is no S3 Vectors or
+separate ANN service in this implementation, and PostgreSQL benchmark numbers do
+not describe this lexical ranker or reader-only hit behavior.
 
-## Permissions and checks
+## Permissions and verification
 
-Readers need `s3:GetObject` for the corpus prefix. Writers also need `s3:PutObject`
-for `latest.json` and `snapshots/*`; deletion is not needed by the backend. Give
-initialization callers sufficient `s3:ListBucket` permission to distinguish a
-missing key from access denied. KMS-encrypted buckets additionally require the
-corresponding KMS key permissions. Denied access and missing buckets are errors,
-not interpreted as empty corpora. Keep public access blocked and avoid granting
-readers write permissions; the process role is an additional software guard.
-
-Offline contract tests cover recovery, conflicts, failed uploads, lost responses,
-reader isolation, audit preservation, semantic candidates and HTTP request receipts:
+Readers need `s3:GetObject` on the prefix. Writers also need `s3:PutObject` on
+`latest.json`, `manifests/*` and `chunks/*`. Backend operation does not need deletion.
+Initialization callers need enough `s3:ListBucket` permission to distinguish missing
+keys from access denied. KMS-encrypted buckets need corresponding key permissions.
+Keep public access blocked and restrict reader credentials to read access.
 
 ```bash
-uv run --extra test --extra object-store pytest -q tests_engine/test_snapshots.py
-```
+uv run --extra test --extra object-store pytest -q \
+  tests_engine/test_snapshots.py tests_engine/test_snapshot_scaling.py
 
-The opt-in live test creates a random prefix inside a bucket you supply and removes
-only that prefix's objects. Use a private test bucket without retention/versioning
-for automatic complete cleanup; on versioned buckets, delete markers/old versions
-need a separate retention policy.
+# Actual >256 MiB round trip; uses roughly 1 GiB of transient memory:
+MEMORY_TEST_LARGE_SNAPSHOT=1 uv run --extra test --extra object-store \
+  pytest -q tests_engine/test_snapshots_large.py
 
-```bash
+# Creates a random prefix and deletes only that prefix's objects:
 MEMORY_TEST_S3_URI=s3://YOUR_PRIVATE_TEST_BUCKET/test-prefix \
   uv run --extra test --extra object-store pytest -q tests_engine/test_snapshots_s3.py
 ```
+
+Use a non-versioned test bucket without retention for complete automatic cleanup.
+Versioned buckets additionally retain old versions/delete markers according to
+bucket policy. The live tests cover real ONNX inference as well as storage contracts.

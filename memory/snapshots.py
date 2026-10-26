@@ -1,23 +1,23 @@
-"""Disposable SQLite sessions, durable immutable snapshots and CAS publication.
+"""Disposable SQLite sessions, chunked snapshots and optimistic publication.
 
 There is no authoritative local database. Each session loads exactly one published
-version into memory. A successful writer commit uploads the complete DB before
-conditionally publishing its manifest. A failed publication poisons the session.
+version into memory. Writers upload changed chunks and conditionally publish a
+manifest, rebasing independent concurrent row changes. Failed sessions are closed.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import os
-import re
+import uuid
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from memory import config
-from memory.models import Base
-from memory.object_store import MAX_SNAPSHOT_BYTES, ObjectStore, PublicationConflict, open_object_store
+from memory.models import Base, MemoryTag
+from memory.object_store import ObjectStore, PublicationConflict, open_object_store
+from memory.snapshot_pages import load, publish
+from memory.snapshot_merge import merge
 
 
 def _profile() -> dict:
@@ -28,36 +28,28 @@ def _profile() -> dict:
 class SnapshotSession(Session):
     def __init__(self, objects: ObjectStore, *, writer: bool = False):
         if config.EMBEDDING_DIM != 384:
-            raise ValueError("Snapshot format v1 requires 384-dimensional embeddings")
+            raise ValueError("Snapshot backend requires 384-dimensional embeddings")
         self.objects = objects
         self.writer = writer
         self.failed = False
         self.etag = None
         self.snapshot_engine = create_engine("sqlite://", poolclass=StaticPool)
         try:
-            pointer = objects.get("latest.json")
+            data, self.etag, self.known_chunks = load(objects, _profile())
             with self.snapshot_engine.connect() as conn:
                 raw = conn.connection.driver_connection
-                if pointer is not None:
-                    manifest = json.loads(pointer.data)
-                    digest = manifest.get("sha256", "")
-                    if (manifest.get("format") != 1
-                            or not re.fullmatch(r"[0-9a-f]{64}", digest)
-                            or manifest.get("embedding") != _profile()):
-                        raise ValueError("Unsupported snapshot format or embedding profile")
-                    snapshot = objects.get(f"snapshots/{digest}.sqlite")
-                    if snapshot is None or hashlib.sha256(snapshot.data).hexdigest() != digest:
-                        raise ValueError("Published snapshot is missing or has an invalid checksum")
-                    if len(snapshot.data) > MAX_SNAPSHOT_BYTES:
-                        raise ValueError("Snapshot exceeds the 256 MiB limit")
-                    raw.deserialize(snapshot.data)
+                if data is not None:
+                    raw.deserialize(data)
                     if raw.execute("PRAGMA quick_check").fetchone() != ("ok",):
                         raise ValueError("Invalid SQLite snapshot")
-                    self.etag = pointer.etag
                 elif not writer:
                     raise RuntimeError("No published snapshot; initialize with a writer first")
-            if pointer is None:
+                raw.execute("PRAGMA foreign_keys=ON")
+            if data is None:
                 Base.metadata.create_all(self.snapshot_engine)
+                with self.snapshot_engine.connect() as conn:
+                    data = conn.connection.driver_connection.serialize()
+            self.base_data = data if writer else None
             if not writer:
                 with self.snapshot_engine.connect() as conn:
                     conn.exec_driver_sql("PRAGMA query_only=ON")
@@ -67,6 +59,7 @@ class SnapshotSession(Session):
             # transaction cannot acknowledge a local-only write by accident.
             event.listen(self, "before_commit", lambda session: self._check())
             event.listen(self, "after_commit", self._publish)
+            event.listen(self, "before_flush", self._canonical_tags)
         except BaseException:
             self.snapshot_engine.dispose()
             raise
@@ -89,6 +82,11 @@ class SnapshotSession(Session):
         self._check()
         return super().commit()
 
+    def _canonical_tags(self, session, context, instances):
+        for row in session.new:
+            if isinstance(row, MemoryTag):
+                row.id = uuid.uuid5(uuid.NAMESPACE_URL, f"mempp-tag:{row.scope_key}:{row.label}")
+
     def _publish(self, session):
         self._check()
         if session.in_nested_transaction():
@@ -99,20 +97,27 @@ class SnapshotSession(Session):
                 return
             with self.snapshot_engine.connect() as conn:
                 data = conn.connection.driver_connection.serialize()
-            if len(data) > MAX_SNAPSHOT_BYTES:
-                raise ValueError("Snapshot exceeds the 256 MiB limit")
-            digest = hashlib.sha256(data).hexdigest()
-            key = f"snapshots/{digest}.sqlite"
-            try:
-                self.objects.put(key, data)
-            except PublicationConflict:
-                # An identical snapshot can already exist after a lost response.
-                existing = self.objects.get(key)
-                if existing is None or existing.data != data:
-                    raise ValueError("Immutable snapshot key contains different data")
-            manifest = json.dumps({"format": 1, "sha256": digest, "embedding": _profile()},
-                                  sort_keys=True).encode()
-            self.etag = self.objects.put("latest.json", manifest, expected=self.etag)
+            ours = data
+            retries = int(os.environ.get("MEMORY_OBJECT_STORE_WRITE_RETRIES", "8"))
+            if retries < 1:
+                raise ValueError("MEMORY_OBJECT_STORE_WRITE_RETRIES must be positive")
+            for attempt in range(retries):
+                try:
+                    self.etag = publish(self.objects, data, _profile(), self.known_chunks, self.etag)
+                    break
+                except PublicationConflict:
+                    if attempt + 1 == retries:
+                        raise
+                    latest, self.etag, known = load(self.objects, _profile())
+                    if latest is None:
+                        raise PublicationConflict("Published corpus disappeared; reload and retry")
+                    self.known_chunks.update(known)
+                    data = merge(self.base_data, ours, latest)
+            if data != ours:
+                with self.snapshot_engine.connect() as conn:
+                    conn.connection.driver_connection.deserialize(data)
+                    conn.exec_driver_sql("PRAGMA foreign_keys=ON")
+            self.base_data = data
         except BaseException:
             self.failed = True
             raise
@@ -122,6 +127,7 @@ class SnapshotSession(Session):
             super().close()
         finally:
             self.failed = True
+            self.base_data = None
             self.snapshot_engine.dispose()
 
 

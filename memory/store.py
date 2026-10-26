@@ -209,6 +209,14 @@ class PostgresMemoryStore:
             occurred_at=occurred_at,
             source_message_id=source_message_id,
         )
+        if self.db.info.get("snapshot_backend") and source_message_id is not None:
+            import json
+            import uuid
+
+            memory.id = uuid.uuid5(uuid.NAMESPACE_URL, json.dumps([
+                "mempp-source", str(user_id), agent_type, str(project_id),
+                str(source_message_id), context_summary if idempotency_key is not None else None,
+            ]))
         if occurred_at is not None:
             memory.valid_from = occurred_at
 

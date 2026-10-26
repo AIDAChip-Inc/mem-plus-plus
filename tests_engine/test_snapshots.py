@@ -18,6 +18,7 @@ from memory.models import AgentMemory
 from memory.object_store import FileObjectStore, PublicationConflict, S3ObjectStore, open_object_store
 from memory.recall import project_scope, recall_facts, store_facts_verbatim
 from memory.snapshots import SnapshotSession
+from memory.snapshot_pages import reset_cache
 from memory.store import PostgresMemoryStore
 
 
@@ -31,6 +32,7 @@ class Embedder:
 
 @pytest.fixture
 def objects(tmp_path, monkeypatch):
+    reset_cache()
     monkeypatch.setattr("memory.store.get_embedding_service", lambda _: Embedder())
     monkeypatch.setattr(config, "MEMORY_EMBEDDINGS_ENABLED", True)
     monkeypatch.setenv("MEMORY_STORAGE_BACKEND", "object_store")
@@ -91,19 +93,27 @@ def test_offset_timestamps_and_query_bounds_preserve_instants(objects, monkeypat
     assert len(browse_memories(occurred_before="2026-01-01T03:00:00+05:00")) == 1
 
 
-def test_stale_writer_rejected_without_losing_winner(objects):
+def test_stale_writer_merges_independent_records(objects):
     with SnapshotSession(objects, writer=True) as first, SnapshotSession(objects, writer=True) as stale:
         write(first, "winner")
+        write(stale, "independent")
+    with SnapshotSession(objects) as reader:
+        assert {row.content for row in reader.query(AgentMemory)} == {"winner", "independent"}
+
+
+def test_same_row_conflict_never_loses_winner(objects):
+    with SnapshotSession(objects, writer=True) as session:
+        memory_id = write(session).id
+    with SnapshotSession(objects, writer=True) as first, SnapshotSession(objects, writer=True) as stale:
+        first.get(AgentMemory, memory_id).context_summary = "winner"
+        stale.get(AgentMemory, memory_id).context_summary = "conflicting"
+        first.commit()
         with pytest.raises(PublicationConflict):
-            write(stale, "loser")
+            stale.commit()
         with pytest.raises(RuntimeError, match="failed"):
             stale.commit()
     with SnapshotSession(objects) as reader:
-        assert [row.content for row in reader.query(AgentMemory)] == ["winner"]
-    with SnapshotSession(objects, writer=True) as retry:
-        write(retry, "loser")
-    with SnapshotSession(objects) as reader:
-        assert reader.query(AgentMemory).count() == 2
+        assert reader.get(AgentMemory, memory_id).context_summary == "winner"
 
 
 def test_reader_is_pinned_and_enforces_read_only(objects):
@@ -239,7 +249,8 @@ def test_invalid_publication_fails_closed(objects, damage):
         write(session)
     pointer = objects.get("latest.json")
     manifest = json.loads(pointer.data)
-    path = objects.root / "snapshots" / f"{manifest['sha256']}.sqlite"
+    index = json.loads(objects.get(f"manifests/{manifest['sha256']}.json").data)
+    path = objects.root / "chunks" / index["chunks"][0]
     if damage == "corrupt":
         path.write_bytes(b"corrupt")
     elif damage == "missing":
@@ -247,6 +258,7 @@ def test_invalid_publication_fails_closed(objects, damage):
     else:
         manifest["embedding" if damage == "profile" else "format"] = "unsupported"
         objects.put("latest.json", json.dumps(manifest).encode(), expected=pointer.etag)
+    reset_cache()
     with pytest.raises(ValueError):
         SnapshotSession(objects)
 

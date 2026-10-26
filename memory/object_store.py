@@ -27,6 +27,8 @@ class ObjectStore(Protocol):
     consistency. Missing keys return None; auth/network failures must propagate.
     """
 
+    cache_key: str
+
     def get(self, key: str) -> Object | None: ...
 
     def put(self, key: str, data: bytes, *, expected: str | None = None) -> str: ...
@@ -41,6 +43,7 @@ class FileObjectStore:
 
     def __init__(self, root: Path):
         self.root = root.resolve()
+        self.cache_key = self.root.as_uri()
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _path(self, key: str) -> Path:
@@ -97,6 +100,7 @@ class S3ObjectStore:
         self.client = client
         self.bucket = bucket
         self.prefix = prefix.strip("/")
+        self.cache_key = f"s3:{self.client.meta.endpoint_url}:{bucket}/{self.prefix}"
 
     def _key(self, key: str) -> str:
         return f"{self.prefix}/{key}" if self.prefix else key
@@ -113,11 +117,14 @@ class S3ObjectStore:
         body = response["Body"]
         try:
             # Bound allocations even for a corrupt/untrusted remote object.
-            if response["ContentLength"] > MAX_SNAPSHOT_BYTES:
-                raise ValueError("Object exceeds the 256 MiB snapshot limit")
-            data = body.read(MAX_SNAPSHOT_BYTES + 1)
-            if len(data) > MAX_SNAPSHOT_BYTES:
-                raise ValueError("Object exceeds the 256 MiB snapshot limit")
+            limit = int(os.environ.get("MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES", str(1024**3)))
+            if limit <= 0:
+                raise ValueError("MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES must be positive")
+            if response["ContentLength"] > limit:
+                raise ValueError("Object exceeds MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES")
+            data = body.read(limit + 1)
+            if len(data) > limit:
+                raise ValueError("Object exceeds MEMORY_OBJECT_STORE_MAX_OBJECT_BYTES")
             return Object(data, response["ETag"])
         finally:
             body.close()
@@ -135,9 +142,6 @@ class S3ObjectStore:
                 raise PublicationConflict("Object changed; reload latest and retry") from exc
             raise
         return result["ETag"]
-
-
-MAX_SNAPSHOT_BYTES = 256 * 1024 * 1024
 
 
 def open_object_store(uri: str) -> ObjectStore:
